@@ -6,6 +6,8 @@
 """
 
 import argparse
+import hashlib
+import json
 import os
 import re
 import sys
@@ -32,6 +34,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--draw_max_cap", type=int, default=200000, help="fallback 时允许的 draw_max 上限")
     parser.add_argument("--T", type=float, default=1.0, help="总票数 T_t（用于换算 V_mean）")
     parser.add_argument("--seed", type=int, default=1234, help="全局随机种子")
+    parser.add_argument("--soft_eps", type=float, default=float("nan"),
+                        help="Soft ABC kernel epsilon；若为 NaN 则每周自适应（median distance）")
+    parser.add_argument("--soft_delta", type=float, default=1e-12,
+                        help="Rank 赛制连续 proxy 中 log(p+delta) 的 delta")
     parser.add_argument("--post28_mode", type=str, default="rank_only",
                         choices=["rank_only"],
                         help="Season>=28 的处理模式（预留接口；当前仅支持 rank_only）")
@@ -70,6 +76,13 @@ def scheme_for_season(season: int) -> str:
     if season in (1, 2) or season >= 28:
         return "Rank"
     return "Percent"
+
+
+def stable_seed(base_seed: int, season: int, week: int, tag: str) -> int:
+    """稳定的 32-bit seed，避免 Python hash 随机化导致不可复现。"""
+    payload = f"{base_seed}|{season}|{week}|{tag}".encode("utf-8")
+    digest = hashlib.blake2b(payload, digest_size=4).digest()
+    return int.from_bytes(digest, "little")
 
 
 def compute_week_judge_totals(df: pd.DataFrame, week_cols: Dict[int, List[str]]) -> pd.DataFrame:
@@ -202,6 +215,56 @@ def compute_margin_rank(names: List[str], judge_totals: Dict[str, float],
     return float(r_sorted[k - 1] - r_sorted[k])
 
 
+def zscore(arr: np.ndarray) -> np.ndarray:
+    """稳定 z-score，避免 std=0。"""
+    mu = float(np.mean(arr))
+    sd = float(np.std(arr))
+    if sd <= 1e-12:
+        return np.zeros_like(arr, dtype=float)
+    return (arr - mu) / sd
+
+
+def compute_distance_percent(names: List[str], judge_totals: Dict[str, float],
+                             p: np.ndarray, elim_set: Set[str]) -> float:
+    """
+    Percent 赛制软距离：
+    d = max(0, max(C_e) - min(C_safe))
+    若真实淘汰者整体分数都不高于幸存者，则 d=0。
+    """
+    if len(elim_set) == 0 or len(elim_set) == len(names):
+        return 0.0
+    sum_j = sum(judge_totals[nm] for nm in names)
+    if sum_j <= 0:
+        sum_j = 1.0
+    c_vals = np.array([judge_totals[nm] / sum_j + float(p[i]) for i, nm in enumerate(names)], dtype=float)
+    elim_mask = np.array([nm in elim_set for nm in names], dtype=bool)
+    if not np.any(elim_mask) or np.all(elim_mask):
+        return 0.0
+    elim_max = float(np.max(c_vals[elim_mask]))
+    safe_min = float(np.min(c_vals[~elim_mask]))
+    return float(max(0.0, elim_max - safe_min))
+
+
+def compute_distance_rank(names: List[str], judge_totals: Dict[str, float],
+                          p: np.ndarray, elim_set: Set[str], delta: float) -> float:
+    """
+    Rank 赛制软距离（连续 proxy）：
+    S = z(J) + z(log(p+delta)), d = max(0, max(S_e) - min(S_safe))
+    """
+    if len(elim_set) == 0 or len(elim_set) == len(names):
+        return 0.0
+    j_scores = np.array([judge_totals[nm] for nm in names], dtype=float)
+    z_j = zscore(j_scores)
+    z_f = zscore(np.log(p + delta))
+    s_vals = z_j + z_f
+    elim_mask = np.array([nm in elim_set for nm in names], dtype=bool)
+    if not np.any(elim_mask) or np.all(elim_mask):
+        return 0.0
+    elim_max = float(np.max(s_vals[elim_mask]))
+    safe_min = float(np.min(s_vals[~elim_mask]))
+    return float(max(0.0, elim_max - safe_min))
+
+
 # -----------------------------
 # ABC 采样（动态 Dirichlet）
 # -----------------------------
@@ -231,10 +294,12 @@ def run_abc_sampling(names: List[str],
                      prior_alpha: np.ndarray,
                      n_accept: int,
                      draw_max: int,
-                     rng: np.random.Generator) -> Tuple[np.ndarray, int, int]:
+                     rng: np.random.Generator,
+                     track_soft: bool,
+                     soft_delta: float) -> Tuple[np.ndarray, int, int, Optional[np.ndarray], Optional[np.ndarray]]:
     """
     ABC rejection sampling：
-    返回 (accepted_samples, accepted, draws)。
+    返回 (accepted_samples, accepted, draws, distances, pred_match)。
     """
     n = len(names)
     k = len(elim_set)
@@ -243,28 +308,44 @@ def run_abc_sampling(names: List[str],
     if k == 0:
         target = min(n_accept, draw_max)
         samples = np.array([sample_dirichlet(prior_alpha, rng) for _ in range(target)])
-        return samples, target, target
+        if track_soft:
+            distances = np.zeros(target, dtype=float)
+            pred_match = np.ones(target, dtype=bool)
+            return samples, target, target, distances, pred_match
+        return samples, target, target, None, None
 
     accepted = 0
     draws = 0
     samples = []
+    distances = [] if track_soft else None
+    pred_match = [] if track_soft else None
 
     while draws < draw_max and accepted < n_accept:
         p = sample_dirichlet(prior_alpha, rng)
 
         if scheme == "Percent":
             pred = compute_elim_percent(names, judge_totals, p, k)
+            if track_soft:
+                distances.append(compute_distance_percent(names, judge_totals, p, elim_set))
         else:
             pred = compute_elim_rank(names, judge_totals, p, k)
+            if track_soft:
+                distances.append(compute_distance_rank(names, judge_totals, p, elim_set, soft_delta))
 
         draws += 1
+        if track_soft:
+            pred_match.append(pred == elim_set)
         if pred == elim_set:
             samples.append(p)
             accepted += 1
 
     if len(samples) == 0:
-        return np.zeros((0, n)), 0, draws
-    return np.vstack(samples), accepted, draws
+        dist_arr = np.array(distances, dtype=float) if track_soft else None
+        match_arr = np.array(pred_match, dtype=bool) if track_soft else None
+        return np.zeros((0, n)), 0, draws, dist_arr, match_arr
+    dist_arr = np.array(distances, dtype=float) if track_soft else None
+    match_arr = np.array(pred_match, dtype=bool) if track_soft else None
+    return np.vstack(samples), accepted, draws, dist_arr, match_arr
 
 
 def abc_with_fallback(names: List[str],
@@ -276,7 +357,9 @@ def abc_with_fallback(names: List[str],
                       draw_max: int,
                       draw_max_cap: int,
                       rng: np.random.Generator,
-                      have_prev: bool) -> Tuple[np.ndarray, int, int, str, np.ndarray]:
+                      have_prev: bool,
+                      track_soft: bool,
+                      soft_delta: float) -> Tuple[np.ndarray, int, int, str, np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
     """
     更“统计合理”的 fallback：
     1) 正常 prior
@@ -290,8 +373,8 @@ def abc_with_fallback(names: List[str],
     prior_used = prior_alpha.copy()
 
     # 1) 正常采样
-    samples, accepted, draws = run_abc_sampling(
-        names, judge_totals, elim_set, scheme, prior_used, n_accept, draw_max, rng
+    samples, accepted, draws, distances, pred_match = run_abc_sampling(
+        names, judge_totals, elim_set, scheme, prior_used, n_accept, draw_max, rng, track_soft, soft_delta
     )
 
     # 2) 若完全失败且有 prev：优先放松平滑（更接近“提议分布改良”）
@@ -299,16 +382,16 @@ def abc_with_fallback(names: List[str],
         status = "fallback_loosen_kappa"
         # 将 prior_alpha 向均匀方向拉近：alpha' = 0.25*alpha + 0.75*1
         prior_used = 0.25 * prior_used + 0.75 * np.ones_like(prior_used)
-        samples, accepted, draws = run_abc_sampling(
-            names, judge_totals, elim_set, scheme, prior_used, n_accept, draw_max, rng
+        samples, accepted, draws, distances, pred_match = run_abc_sampling(
+            names, judge_totals, elim_set, scheme, prior_used, n_accept, draw_max, rng, track_soft, soft_delta
         )
 
     # 3) 仍失败：uniform prior
     if accepted == 0:
         status = "fallback_uniform"
         prior_used = np.ones(len(names))
-        samples, accepted, draws = run_abc_sampling(
-            names, judge_totals, elim_set, scheme, prior_used, n_accept, draw_max, rng
+        samples, accepted, draws, distances, pred_match = run_abc_sampling(
+            names, judge_totals, elim_set, scheme, prior_used, n_accept, draw_max, rng, track_soft, soft_delta
         )
 
     # 4) accepted 太少：提高 draw_max（更像“增加计算预算”而非改变统计含义）
@@ -316,28 +399,30 @@ def abc_with_fallback(names: List[str],
         new_draw_max = min(draw_max_cap, int(draw_max * 2))
         if new_draw_max > draw_max:
             status = "fallback_more_draws"
-            samples2, accepted2, draws2 = run_abc_sampling(
-                names, judge_totals, elim_set, scheme, prior_used, n_accept, new_draw_max, rng
+            samples2, accepted2, draws2, distances2, pred_match2 = run_abc_sampling(
+                names, judge_totals, elim_set, scheme, prior_used, n_accept, new_draw_max, rng, track_soft, soft_delta
             )
             # 用更好的结果替换
             if accepted2 > accepted:
                 samples, accepted, draws = samples2, accepted2, draws2
+                distances, pred_match = distances2, pred_match2
                 draw_max = new_draw_max
 
     # 5) 仍太少：降低 n_accept（至少出个稳定区间）
     if accepted < max(10, int(0.1 * n_accept)):
         status = "fallback_reduce_accept"
         target = min(200, n_accept)
-        samples2, accepted2, draws2 = run_abc_sampling(
-            names, judge_totals, elim_set, scheme, prior_used, target, draw_max, rng
+        samples2, accepted2, draws2, distances2, pred_match2 = run_abc_sampling(
+            names, judge_totals, elim_set, scheme, prior_used, target, draw_max, rng, track_soft, soft_delta
         )
         if accepted2 > 0:
             samples, accepted, draws = samples2, accepted2, draws2
+            distances, pred_match = distances2, pred_match2
 
     if accepted == 0:
         status = "failed"
 
-    return samples, accepted, draws, status, prior_used
+    return samples, accepted, draws, status, prior_used, distances, pred_match
 
 
 # -----------------------------
@@ -372,6 +457,47 @@ def summarize_posterior(samples: np.ndarray,
     p_map = samples[int(np.argmax(scores))].copy()
 
     return p_mean, p_lo, p_hi, ent, p_map
+
+
+def compute_soft_weights(distances: Optional[np.ndarray], eps: float) -> Tuple[np.ndarray, float, float]:
+    """根据距离计算 soft ABC 权重与 ESS。"""
+    if distances is None or len(distances) == 0:
+        return np.array([], dtype=float), float("nan"), 0.0
+    use_eps = float(eps)
+    if (not np.isfinite(use_eps)) or use_eps <= 0:
+        med = float(np.median(distances))
+        if (not np.isfinite(med)) or med <= 0:
+            pos = distances[distances > 0]
+            med = float(np.median(pos)) if len(pos) > 0 else 1e-6
+        use_eps = max(med, 1e-6)
+    w = np.exp(-distances / use_eps)
+    w_sum = float(np.sum(w))
+    if (not np.isfinite(w_sum)) or w_sum <= 0:
+        min_d = float(np.min(distances))
+        w = (distances == min_d).astype(float)
+        w_sum = float(np.sum(w))
+    ess = float((w_sum ** 2) / np.sum(w ** 2)) if w_sum > 0 else 0.0
+    return w, use_eps, ess
+
+
+def compute_pp_consistency(pred_match: Optional[np.ndarray],
+                           weights: Optional[np.ndarray],
+                           ess: float) -> Tuple[float, float]:
+    """Posterior predictive consistency 及其标准误（ESS 近似）。"""
+    if pred_match is None or len(pred_match) == 0:
+        return np.nan, np.nan
+    if weights is None or len(weights) == 0:
+        ppc = float(np.mean(pred_match))
+        m = len(pred_match)
+        se = float(np.sqrt(ppc * (1.0 - ppc) / m)) if m > 0 else np.nan
+        return ppc, se
+    w_sum = float(np.sum(weights))
+    if w_sum <= 0 or (not np.isfinite(w_sum)):
+        return np.nan, np.nan
+    ppc = float(np.sum(weights * pred_match) / w_sum)
+    ess_eff = ess if ess > 1e-12 else float(len(pred_match))
+    se = float(np.sqrt(ppc * (1.0 - ppc) / ess_eff)) if ess_eff > 0 else np.nan
+    return ppc, se
 
 
 def predict_elim_and_margin(names: List[str],
@@ -419,8 +545,8 @@ def main() -> None:
         scheme = task["scheme"]
         n = len(names)
 
-        # 每周独立 RNG（保证可复现：同一 season/week 总是一样）
-        local_seed = (hash((args.seed, season, week)) % (2**32 - 1))
+        # 每周独立 RNG（稳定 seed，避免 Python hash 随机化）
+        local_seed = stable_seed(args.seed, season, week, "hard")
         rng = np.random.default_rng(local_seed)
 
         # 构造动态先验
@@ -441,7 +567,7 @@ def main() -> None:
                 prior_source = "smoothed_from_prev"
 
         # ABC 采样（带更合理 fallback）
-        samples, accepted, draws, status, prior_used = abc_with_fallback(
+        samples, accepted, draws, status, prior_used, distances, pred_match = abc_with_fallback(
             names=names,
             judge_totals=judge_totals,
             elim_set=elim_set,
@@ -451,9 +577,16 @@ def main() -> None:
             draw_max=args.draw_max,
             draw_max_cap=args.draw_max_cap,
             rng=rng,
-            have_prev=have_prev
+            have_prev=have_prev,
+            track_soft=True,
+            soft_delta=args.soft_delta
         )
         accept_rate = accepted / draws if draws > 0 else 0.0
+
+        # Soft ABC: 距离 -> 权重 -> posterior predictive consistency
+        weights, soft_eps, soft_ess = compute_soft_weights(distances, args.soft_eps)
+        pp_consistency, pp_consistency_se = compute_pp_consistency(pred_match, weights, soft_ess)
+        feasible = 1 if (accepted > 0 or (np.isfinite(pp_consistency) and pp_consistency > 0.0)) else 0
 
         # 后验统计（mean + CI + entropy + p_map）
         if samples.shape[0] == 0:
@@ -524,6 +657,12 @@ def main() -> None:
             "scheme": scheme,
             "elim_set": ";".join(sorted(list(elim_set))),
             "accept_rate": accept_rate,
+            "feasible": feasible,
+            "pp_consistency": pp_consistency,
+            "pp_consistency_se": pp_consistency_se,
+            "soft_eps": soft_eps,
+            "soft_ess": soft_ess,
+            "soft_draws": int(len(distances)) if distances is not None else 0,
 
             "consistency_mean": consistency_mean,
             "margin_mean": margin_mean,
@@ -546,6 +685,27 @@ def main() -> None:
     # 输出 CSV
     est_df = pd.DataFrame(est_rows)
     summary_df = pd.DataFrame(summary_rows)
+
+    # 每周不确定性：rel_ci_width 的周均值
+    week_uncertainty = (
+        est_df.groupby(["season", "week"])["rel_ci_width"]
+        .mean()
+        .reset_index()
+        .rename(columns={"rel_ci_width": "week_uncertainty"})
+    )
+    summary_df = summary_df.merge(week_uncertainty, on=["season", "week"], how="left")
+
+    # margin vs uncertainty 相关（全局统计）
+    corr_df = summary_df[["margin_map", "week_uncertainty"]].dropna()
+    pearson = float(corr_df["margin_map"].corr(corr_df["week_uncertainty"], method="pearson")) if len(corr_df) > 1 else float("nan")
+    spearman = float(corr_df["margin_map"].corr(corr_df["week_uncertainty"], method="spearman")) if len(corr_df) > 1 else float("nan")
+    metrics = {
+        "corr_margin_uncertainty_pearson": pearson,
+        "corr_margin_uncertainty_spearman": spearman,
+        "n_weeks": int(len(corr_df)),
+    }
+    with open("global_metrics.json", "w", encoding="utf-8") as f:
+        json.dump(metrics, f, ensure_ascii=False, indent=2)
     est_df.to_csv("fan_vote_estimates.csv", index=False, encoding="utf-8")
     summary_df.to_csv("weekly_summary.csv", index=False, encoding="utf-8")
 
@@ -560,7 +720,12 @@ def main() -> None:
     if bad_rows > 0:
         print(f"[警告] 有 {bad_rows} 个周的 p_mean 未通过归一化检查（可能是数值误差或异常周）。")
 
-    # 终端 summary：建议用 consistency_map 作为“硬一致性”主口径
+    # 终端 summary：pp_consistency 为主指标，consistency_map 仅作“硬一致性/可行性”
+    valid_pp = summary_df["pp_consistency"].dropna()
+    overall_pp = valid_pp.mean() if len(valid_pp) > 0 else np.nan
+    pp_by_scheme = summary_df.groupby("scheme")["pp_consistency"].mean()
+    feasible_rate = summary_df["feasible"].mean()
+
     valid_map = summary_df["consistency_map"].dropna()
     overall_cons_map = valid_map.mean() if len(valid_map) > 0 else np.nan
     cons_map_by_scheme = summary_df.groupby("scheme")["consistency_map"].mean()
@@ -577,6 +742,12 @@ def main() -> None:
     margin_map_min = summary_df["margin_map"].min()
 
     print("\n=== Summary ===")
+    print(f"overall posterior predictive consistency (pp_consistency): {overall_pp:.4f}")
+    print("pp_consistency by scheme:")
+    for sch, val in pp_by_scheme.items():
+        print(f"  {sch}: {val:.4f}")
+    print(f"feasible rate (hard or pp>0): {feasible_rate:.4f}")
+
     print(f"overall consistency (posterior MAP p_map): {overall_cons_map:.4f}")
     print("consistency_map by scheme:")
     for sch, val in cons_map_by_scheme.items():
@@ -600,7 +771,11 @@ def main() -> None:
     print(f"median: {margin_map_median:.6f}")
     print(f"min:    {margin_map_min:.6f}")
 
-    print("\n输出文件：fan_vote_estimates.csv, weekly_summary.csv")
+    print("\nmargin vs uncertainty correlation (week_uncertainty vs margin_map):")
+    print(f"pearson:  {pearson:.4f}")
+    print(f"spearman: {spearman:.4f}")
+
+    print("\n输出文件：fan_vote_estimates.csv, weekly_summary.csv, global_metrics.json")
 
 
 if __name__ == "__main__":

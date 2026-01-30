@@ -1,3 +1,5 @@
+[提示] 使用预处理结果：data/process
+
 === Summary ===
 overall consistency (posterior MAP p_map): 1.0000
 consistency_map by scheme:
@@ -10,23 +12,26 @@ consistency_mean by scheme:
   Rank: 0.9872
 
 accept_rate stats (mean/min/median/max):
-mean    0.287585
-min     0.000080
-50%     0.193723
+mean    0.288909
+min     0.000140
+50%     0.188608
 max     1.000000
 
 CI width stats (mean/min/median/max):
-mean    0.133392
-min     0.020557
-50%     0.138425
-max     0.252670
+mean    0.125319
+min     0.021423
+50%     0.138104
+max     0.245600
 
 Relative CI width stats (mean/min/median/max):
-mean    1.255424
-min     0.225707
-50%     1.303176
-max     2.000190
+mean    1.154720
+min     0.309472
+50%     1.189208
+max     2.036935
 
 margin_map stats (median/min):
-median: 0.009056
+median: 0.008946
 min:    0.000000
+
+输出文件：fan_vote_estimates.csv, weekly_summary.csv
+

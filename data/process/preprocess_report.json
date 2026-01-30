@@ -1,0 +1,995 @@
+{
+  "per_season": {
+    "1": {
+      "total_pairs": 6,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "active_counts": [
+        6,
+        6,
+        5,
+        4,
+        3,
+        2
+      ],
+      "anomalies": []
+    },
+    "2": {
+      "total_pairs": 10,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "active_counts": [
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "3": {
+      "total_pairs": 11,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        11,
+        10,
+        9,
+        8,
+        7,
+        5,
+        5,
+        4,
+        3,
+        2
+      ],
+      "anomalies": []
+    },
+    "4": {
+      "total_pairs": 11,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        11,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "5": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "6": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        12,
+        12,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "7": {
+      "total_pairs": 13,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        13,
+        11,
+        9,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "8": {
+      "total_pairs": 13,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "active_counts": [
+        13,
+        13,
+        12,
+        11,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "9": {
+      "total_pairs": 16,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        16,
+        14,
+        13,
+        11,
+        10,
+        9,
+        7,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "10": {
+      "total_pairs": 11,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        11,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "11": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "12": {
+      "total_pairs": 11,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        11,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "13": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "14": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        12,
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "15": {
+      "total_pairs": 13,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        13,
+        12,
+        11,
+        9,
+        8,
+        8,
+        7,
+        7,
+        5,
+        3
+      ],
+      "anomalies": []
+    },
+    "16": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        12,
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4
+      ],
+      "anomalies": []
+    },
+    "17": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "active_counts": [
+        12,
+        12,
+        11,
+        10,
+        9,
+        8,
+        8,
+        7,
+        6,
+        5,
+        4
+      ],
+      "anomalies": []
+    },
+    "18": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        12,
+        11,
+        9,
+        9,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4
+      ],
+      "anomalies": []
+    },
+    "19": {
+      "total_pairs": 13,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "active_counts": [
+        13,
+        12,
+        11,
+        10,
+        9,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4
+      ],
+      "anomalies": []
+    },
+    "20": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        12,
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "21": {
+      "total_pairs": 13,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "active_counts": [
+        13,
+        13,
+        10,
+        10,
+        9,
+        9,
+        8,
+        7,
+        6,
+        4,
+        4
+      ],
+      "anomalies": [
+        {
+          "week": 3,
+          "type": "drop_gt_2",
+          "delta": 3
+        }
+      ]
+    },
+    "22": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        12,
+        12,
+        11,
+        10,
+        9,
+        9,
+        8,
+        6,
+        5,
+        3
+      ],
+      "anomalies": []
+    },
+    "23": {
+      "total_pairs": 13,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "active_counts": [
+        13,
+        13,
+        12,
+        11,
+        9,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4
+      ],
+      "anomalies": []
+    },
+    "24": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        12,
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        5,
+        4,
+        3
+      ],
+      "anomalies": []
+    },
+    "25": {
+      "total_pairs": 13,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        13,
+        13,
+        11,
+        11,
+        10,
+        9,
+        8,
+        6,
+        5,
+        4
+      ],
+      "anomalies": []
+    },
+    "26": {
+      "total_pairs": 10,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "active_counts": [
+        10,
+        8,
+        6,
+        3
+      ],
+      "anomalies": [
+        {
+          "week": 4,
+          "type": "drop_gt_2",
+          "delta": 3
+        }
+      ]
+    },
+    "27": {
+      "total_pairs": 13,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "active_counts": [
+        13,
+        12,
+        11,
+        10,
+        9,
+        9,
+        8,
+        6,
+        4
+      ],
+      "anomalies": []
+    },
+    "28": {
+      "total_pairs": 12,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "active_counts": [
+        12,
+        12,
+        10,
+        10,
+        9,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4
+      ],
+      "anomalies": []
+    },
+    "29": {
+      "total_pairs": 15,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "active_counts": [
+        15,
+        15,
+        14,
+        13,
+        12,
+        11,
+        10,
+        8,
+        7,
+        6,
+        4
+      ],
+      "anomalies": []
+    },
+    "30": {
+      "total_pairs": 15,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        15,
+        15,
+        14,
+        13,
+        11,
+        10,
+        9,
+        8,
+        6,
+        4
+      ],
+      "anomalies": []
+    },
+    "31": {
+      "total_pairs": 16,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "active_counts": [
+        16,
+        15,
+        14,
+        13,
+        12,
+        10,
+        9,
+        8,
+        6,
+        4
+      ],
+      "anomalies": []
+    },
+    "32": {
+      "total_pairs": 14,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "active_counts": [
+        14,
+        13,
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        5
+      ],
+      "anomalies": []
+    },
+    "33": {
+      "total_pairs": 13,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "active_counts": [
+        13,
+        13,
+        11,
+        9,
+        8,
+        7,
+        6,
+        5,
+        5
+      ],
+      "anomalies": []
+    },
+    "34": {
+      "total_pairs": 14,
+      "observed_weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "active_counts": [
+        14,
+        14,
+        12,
+        11,
+        10,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5
+      ],
+      "anomalies": []
+    }
+  },
+  "data_consistency": {
+    "active_with_zero_score_count": 0,
+    "active_with_zero_score_samples": [],
+    "positive_score_after_elim_count": 0,
+    "positive_score_after_elim_samples": [],
+    "missing_score_weeks_active_count": 0,
+    "missing_score_weeks_active_ratio": 0.0,
+    "invalid_season_week_rows_in_long": 39
+  },
+  "output_files": {
+    "judges_scores_long": {
+      "path": "F:\\MCM2026c\\data\\process\\judges_scores_long.csv",
+      "exists": true
+    },
+    "judges_totals": {
+      "path": "F:\\MCM2026c\\data\\process\\judges_totals.csv",
+      "exists": true
+    },
+    "active_roster": {
+      "path": "F:\\MCM2026c\\data\\process\\active_roster.csv",
+      "exists": true
+    },
+    "elimination_events": {
+      "path": "F:\\MCM2026c\\data\\process\\elimination_events.csv",
+      "exists": true
+    },
+    "model_input": {
+      "path": "F:\\MCM2026c\\data\\process\\model_input.csv",
+      "exists": true
+    },
+    "rows_summary": {
+      "judges_scores_long": 18524,
+      "judges_totals": 4199,
+      "active_roster": 4199,
+      "elimination_events": 335
+    }
+  }
+}

@@ -1,0 +1,336 @@
+season,week,elim_count,eliminated_pair_ids,notes
+1,1,0,,season_start
+1,2,0,,no_elimination
+1,3,1,S1_Trista Sutter __ Louis van Amstel,single_elimination
+1,4,1,S1_Evander Holyfield __ Edyta Sliwinska,single_elimination
+1,5,1,S1_Rachel Hunter __ Jonathan Roberts,single_elimination
+1,6,1,S1_Joey McIntyre __ Ashly DelGrosso,single_elimination;finale_multi_exit
+2,1,0,,season_start
+2,2,1,S2_Kenny Mayne __ Andrea Hale,single_elimination
+2,3,1,S2_Tatum O'Neal __ Nick Kosovich,single_elimination
+2,4,1,S2_Giselle Fernandez __ Jonathan Roberts,single_elimination
+2,5,1,S2_Master P __ Ashly DelGrosso,single_elimination
+2,6,1,S2_Tia Carrere __ Maksim Chmerkoskiy,single_elimination
+2,7,1,S2_George Hamilton __ Edyta Sliwinska,single_elimination
+2,8,1,S2_Lisa Rinna __ Louis van Amstel,single_elimination;finale_multi_exit
+3,1,0,,season_start
+3,2,1,S3_Tucker Carlson __ Elena Grinenko,single_elimination
+3,3,1,S3_Shanna Moakler __ Jesse DeSoto,single_elimination
+3,4,1,S3_Harry Hamlin __ Ashly DelGrosso,single_elimination
+3,5,1,S3_Vivica A. Fox __ Nick Kosovich,single_elimination
+3,6,2,S3_Sara Evans __ Tony Dovolani|S3_Willa Ford __ Maksim Chmerkoskiy,double_elimination
+3,7,0,,no_elimination
+3,8,1,S3_Jerry Springer __ Kym Johnson,single_elimination
+3,9,1,S3_Monique Coleman __ Louis van Amstel,single_elimination
+3,10,1,S3_Joey Lawrence __ Edyta Sliwinska,single_elimination;finale_multi_exit
+4,1,0,,season_start
+4,2,0,,no_elimination
+4,3,1,S4_Paulina Porizkova __ Alec Mazo,single_elimination
+4,4,1,S4_Shandi Finnessey __ Brian Fortuna,single_elimination
+4,5,1,S4_Leeza Gibbons __ Tony Dovolani,single_elimination
+4,6,1,S4_Clyde Drexler __ Elena Grinenko,single_elimination
+4,7,1,S4_Heather Mills __ Jonathan Roberts,single_elimination
+4,8,1,S4_John Ratzenberger __ Edyta Sliwinska,single_elimination
+4,9,1,S4_Billy Ray Cyrus __ Karina Smirnoff,single_elimination
+4,10,1,S4_Ian Ziering __ Cheryl Burke,single_elimination;finale_multi_exit
+5,1,0,,season_start
+5,2,1,S5_Josie Maran __ Alec Mazo,single_elimination
+5,3,1,S5_Albert Reed __ Anna Trebunskaya,single_elimination
+5,4,1,S5_Wayne Newton __ Cheryl Burke,single_elimination
+5,5,1,S5_Floyd Mayweather Jr. __ Karina Smirnoff,single_elimination
+5,6,1,S5_Mark Cuban __ Kym Johnson,single_elimination
+5,7,1,S5_Sabrina Bryan __ Mark Ballas,single_elimination
+5,8,1,S5_Jane Seymour __ Tony Dovolani,single_elimination
+5,9,1,S5_Cameron Mathison __ Edyta Sliwinska,single_elimination
+5,10,1,S5_Jennie Garth __ Derek Hough,single_elimination;finale_multi_exit
+6,1,0,,season_start
+6,2,0,,no_elimination
+6,3,2,S6_Monica Seles __ Jonathan Roberts|S6_Penn Jillette __ Kym Johnson,double_elimination
+6,4,1,S6_Steve Guttenberg __ Anna Trebunskaya,single_elimination
+6,5,1,S6_Adam Carolla __ Julianne Hough,single_elimination
+6,6,1,S6_Priscilla Presley __ Louis van Amstel,single_elimination
+6,7,1,S6_Marlee Matlin __ Fabian Sanchez,single_elimination
+6,8,1,S6_Shannon Elizabeth __ Derek Hough,single_elimination
+6,9,1,S6_Mario __ Karina Smirnoff,single_elimination
+6,10,1,S6_Marissa Jaret Winokur __ Tony Dovolani,single_elimination;finale_multi_exit
+7,1,0,,season_start
+7,2,2,S7_Jeffrey Ross __ Edyta Sliwinska|S7_Ted McGinley __ Inna Brayer,double_elimination
+7,3,2,S7_Kim Kardashian __ Mark Ballas|S7_Misty May-Treanor __ Maksim Chmerkoskiy,double_elimination
+7,4,0,,no_elimination
+7,5,1,S7_Rocco DiSpirito __ Karina Smirnoff,single_elimination
+7,6,1,S7_Toni Braxton __ Alec Mazo,single_elimination
+7,7,1,S7_Cloris Leachman __ Corky Ballas,single_elimination
+7,8,1,S7_Susan Lucci __ Tony Dovolani,single_elimination
+7,9,1,S7_Maurice Greene __ Cheryl Burke,single_elimination
+7,10,1,S7_Cody Linley __ Julianne Hough,single_elimination;finale_multi_exit
+8,1,0,,season_start
+8,2,0,,no_elimination
+8,3,1,S8_Belinda Carlisle __ Jonathan Roberts,single_elimination
+8,4,1,S8_Denise Richards __ Maksim Chmerkoskiy,single_elimination
+8,5,2,S8_Holly Madison __ Dmitry Chaplin|S8_Steve Wozniak __ Karina Smirnoff,double_elimination
+8,6,1,S8_David Alan Grier __ Kym Johnson,single_elimination
+8,7,1,S8_Steve-O __ Lacey Schwimmer,single_elimination
+8,8,1,S8_Lawrence Taylor __ Edyta Sliwinska,single_elimination
+8,9,1,S8_Chuck Wicks __ Julianne Hough,single_elimination
+8,10,1,S8_Lil' Kim __ Derek Hough,single_elimination
+8,11,1,S8_Ty Murray __ Chelsie Hightower,single_elimination;finale_multi_exit
+9,1,0,,season_start
+9,2,2,S9_Ashley Hamiliton __ Edyta Sliwinska|S9_Macy Gray __ Jonathan Roberts,double_elimination
+9,3,1,S9_Kathy Ireland __ Tony Dovolani,single_elimination
+9,4,2,S9_Debi Mazar __ Maksim Chmerkoskiy|S9_Tom DeLay __ Cheryl Burke,double_elimination
+9,5,1,S9_Chuck Liddell __ Anna Trebunskaya,single_elimination
+9,6,1,S9_Natalie Coughlin __ Alec Mazo,single_elimination
+9,7,2,S9_Louie Vito __ Chelsie Hightower|S9_Melissa Joan Hart __ Mark Ballas,double_elimination
+9,8,2,S9_Mark Dacascos __ Lacey Schwimmer|S9_Michael Irvin __ Anna Demidova,double_elimination
+9,9,1,S9_Aaron Carter __ Karina Smirnoff,single_elimination
+9,10,1,S9_Joanna Krupa __ Derek Hough,single_elimination;finale_multi_exit
+10,1,0,,season_start
+10,2,0,,no_elimination
+10,3,1,S10_Shannen Doherty __ Mark Ballas,single_elimination
+10,4,1,S10_Buzz Aldrin __ Ashly DelGrosso,single_elimination
+10,5,1,S10_Aiden Turner __ Edyta Sliwinska,single_elimination
+10,6,1,S10_Kate Gosselin __ Tony Dovolani,single_elimination
+10,7,1,S10_Jake Pavelka __ Chelsie Hightower,single_elimination
+10,8,1,S10_Pamela Anderson __ Damian Whitewood,single_elimination
+10,9,1,S10_Niecy Nash __ Louis van Amstel,single_elimination
+10,10,1,S10_Chad Ochocinco __ Cheryl Burke,single_elimination;finale_multi_exit
+11,1,0,,season_start
+11,2,1,S11_David Hasselhoff __ Kym Johnson,single_elimination
+11,3,1,S11_Michael Bolton __ Chelsie Hightower,single_elimination
+11,4,1,S11_Margaret Cho __ Louis van Amstel,single_elimination
+11,5,1,S11_The Situation __ Karina Smirnoff,single_elimination
+11,6,1,S11_Florence Henderson __ Corky Ballas,single_elimination
+11,7,1,S11_Audrina Patridge __ Tony Dovolani,single_elimination
+11,8,1,S11_Rick Fox __ Cheryl Burke,single_elimination
+11,9,1,S11_Kurt Warner __ Anna Trebunskaya,single_elimination
+11,10,1,S11_Brandy __ Maksim Chmerkoskiy,single_elimination;finale_multi_exit
+12,1,0,,season_start
+12,2,0,,no_elimination
+12,3,1,S12_Mike Catherwood __ Lacey Schwimmer,single_elimination
+12,4,1,S12_Wendy Williams __ Tony Dovolani,single_elimination
+12,5,1,S12_Sugar Ray Leonard __ Anna Trebunskaya,single_elimination
+12,6,1,S12_Petra Nemcova __ Dmitry Chaplin,single_elimination
+12,7,1,S12_Chris Jericho __ Cheryl Burke,single_elimination
+12,8,1,S12_Kendra Wilkinson __ Louis van Amstel,single_elimination
+12,9,1,S12_Romeo __ Chelsie Hightower,single_elimination
+12,10,1,S12_Ralph Macchio __ Karina Smirnoff,single_elimination;finale_multi_exit
+13,1,0,,season_start
+13,2,1,S13_Metta World Peace (Ron) __ Peta Murgatroyd,single_elimination
+13,3,1,S13_Elisabetta Canalis __ Valentin Chmerkovskiy,single_elimination
+13,4,1,S13_Kristin Cavallari __ Mark Ballas,single_elimination
+13,5,1,S13_Chynna Phillips __ Tony Dovolani,single_elimination
+13,6,1,S13_Carson Kressley __ Anna Trebunskaya,single_elimination
+13,7,1,S13_Chaz Bono __ Lacey Schwimmer,single_elimination
+13,8,1,S13_David Arquette __ Kym Johnson,single_elimination
+13,9,1,S13_Nancy Grace __ Tristan MacManus,single_elimination
+13,10,1,S13_Hope Solo __ Maksim Chmerkoskiy,single_elimination;finale_multi_exit
+14,1,0,,season_start
+14,2,0,,no_elimination
+14,3,1,S14_Martina Navratilova __ Tony Dovolani,single_elimination
+14,4,1,S14_Jack Wagner __ Anna Trebunskaya,single_elimination
+14,5,1,S14_Sherri Sheperd __ Valentin Chmerkovskiy,single_elimination
+14,6,1,S14_Gavin DeGraw __ Karina Smirnoff,single_elimination
+14,7,1,S14_Gladys Knight __ Tristan MacManus,single_elimination
+14,8,1,S14_Jaleel White __ Kym Johnson,single_elimination
+14,9,2,S14_Melissa Gilbert __ Maksim Chmerkoskiy|S14_Roshon Fegan __ Chelsie Hightower,double_elimination
+14,10,1,S14_Maria Menounos __ Derek Hough,single_elimination;finale_multi_exit
+15,1,0,,season_start
+15,2,1,S15_Pamela Anderson __ Tristan MacManus,single_elimination
+15,3,1,S15_Joey Fatone __ Kym Johnson,single_elimination
+15,4,2,S15_Drew Lachey __ Anna Trebunskaya|S15_Helio Castroneves __ Chelsie Hightower,double_elimination
+15,5,1,S15_Bristol Palin __ Mark Ballas,single_elimination
+15,6,0,,no_elimination
+15,7,1,S15_Sabrina Bryan __ Louis van Amstel,single_elimination
+15,8,0,,no_elimination
+15,9,2,S15_Gilles Marini __ Peta Murgatroyd|S15_Kirstie Alley __ Maksim Chmerkoskiy,double_elimination
+15,10,2,S15_Apolo Anton Ohno __ Karina Smirnoff|S15_Emmitt Smith __ Cheryl Burke,double_elimination;finale_multi_exit
+16,1,0,,season_start
+16,2,0,,no_elimination
+16,3,1,S16_Dorothy Hamill __ Tristan MacManus,single_elimination
+16,4,1,S16_Wynonna Judd __ Tony Dovolani,single_elimination
+16,5,1,S16_Lisa Vanderpump __ Gleb Savchenko,single_elimination
+16,6,1,S16_D. L. Hughley __ Cheryl Burke,single_elimination
+16,7,1,S16_Victor Ortiz __ Lindsay Arnold,single_elimination
+16,8,1,S16_Andy Dick __ Sharna Burgess,single_elimination
+16,9,1,S16_Sean Lowe __ Peta Murgatroyd,single_elimination
+16,10,1,S16_Ingo Rademacher __ Kym Johnson,single_elimination;finale_multi_exit
+17,1,0,,season_start
+17,2,0,,no_elimination
+17,3,1,S17_Keyshawn Johnson __ Sharna Burgess,single_elimination
+17,4,1,S17_Bill Nye __ Tyne Stecklein,single_elimination
+17,5,1,S17_Valerie Harper __ Tristan MacManus,single_elimination
+17,6,1,S17_Christina Milian __ Mark Ballas,single_elimination
+17,7,0,,no_elimination
+17,8,1,"S17_Nicole ""Snooki"" Polizzi __ Sasha Farber",single_elimination
+17,9,1,S17_Brant Daugherty __ Peta Murgatroyd,single_elimination
+17,10,1,S17_Elizabeth Berkley Lauren __ Valentin Chmerkovskiy,single_elimination
+17,11,1,S17_Leah Remini __ Tony Dovolani,single_elimination;finale_multi_exit
+18,1,0,,season_start
+18,2,1,S18_Diana Nyad __ Henry Byalikov,single_elimination
+18,3,2,S18_Billy Dee Williams __ Emma Slater|S18_Sean Avery __ Karina Smirnoff,double_elimination
+18,4,0,,no_elimination
+18,5,0,,no_elimination
+18,6,1,S18_Cody Simpson __ Witney Carson,single_elimination
+18,7,1,S18_Drew Carey __ Cheryl Burke,single_elimination
+18,8,1,S18_NeNe Leakes __ Tony Dovolani,single_elimination
+18,9,1,S18_Danica McKellar __ Valentin Chmerkovskiy,single_elimination
+18,10,1,S18_Charlie White __ Sharna Burgess,single_elimination;finale_multi_exit
+19,1,0,,season_start
+19,2,1,S19_Lolo Jones __ Keo Motsepe,single_elimination
+19,3,1,S19_Tavis Smiley __ Sharna Burgess,single_elimination
+19,4,1,S19_Randy Couture __ Karina Smirnoff,single_elimination
+19,5,1,S19_Betsey Johnson __ Tony Dovolani,single_elimination
+19,6,0,,no_elimination
+19,7,1,S19_Jonathan Bennett __ Allison Holker,single_elimination
+19,8,1,S19_Antonio Sabato Jr. __ Cheryl Burke,single_elimination
+19,9,1,S19_Michael Waltrip __ Emma Slater,single_elimination
+19,10,1,S19_Lea Thompson __ Artem Chigvintsev,single_elimination
+19,11,1,S19_Tommy Chong __ Peta Murgatroyd,single_elimination;finale_multi_exit
+20,1,0,,season_start
+20,2,0,,no_elimination
+20,3,1,S20_Redfoo __ Emma Slater,single_elimination
+20,4,1,S20_Charlotte McKinney __ Keo Motsepe,single_elimination
+20,5,1,S20_Michael Sam __ Peta Murgatroyd,single_elimination
+20,6,1,S20_Suzanne Somers __ Tony Dovolani,single_elimination
+20,7,1,S20_Patti LaBelle __ Artem Chigvintsev,single_elimination
+20,8,1,S20_Willow Shields __ Mark Ballas,single_elimination
+20,9,2,S20_Chris Soules __ Witney Carson|S20_Robert Herjavec __ Kym Johnson,double_elimination
+20,10,1,S20_Nastia Liukin __ Derek Hough,single_elimination;finale_multi_exit
+21,1,0,,season_start
+21,2,0,,no_elimination
+21,3,3,S21_Chaka Khan __ Keo Motsepe|S21_Kim Zolciak-Biermann __ Tony Dovolani|S21_Victor Espinoza __ Karina Smirnoff,anomaly_drop>2
+21,4,0,,no_elimination
+21,5,1,S21_Gary Busey __ Anna Trebunskaya,single_elimination
+21,6,0,,no_elimination
+21,7,1,S21_Paula Deen __ Louis van Amstel,single_elimination
+21,8,1,S21_Hayes Grier __ Emma Slater,single_elimination
+21,9,1,S21_Andy Grammer __ Allison Holker,single_elimination
+21,10,2,S21_Alexa PenaVega __ Mark Ballas|S21_Tamar Braxton __ Valentin Chmerkovskiy,double_elimination
+21,11,0,,no_elimination
+22,1,0,,season_start
+22,2,0,,no_elimination
+22,3,1,S22_Geraldo Rivera __ Edyta Sliwinska,single_elimination
+22,4,1,S22_Mischa Barton __ Artem Chigvintsev,single_elimination
+22,5,1,S22_Marla Maples __ Tony Dovolani,single_elimination
+22,6,0,,no_elimination
+22,7,1,S22_Doug Flutie __ Karina Smirnoff,single_elimination
+22,8,2,S22_Kim Fields __ Sasha Farber|S22_Von Miller __ Witney Carson,double_elimination
+22,9,1,S22_Jodie Sweetin __ Keo Motsepe,single_elimination
+22,10,2,S22_Antonio Brown __ Sharna Burgess|S22_Wanya Morris __ Lindsay Arnold,double_elimination;finale_multi_exit
+23,1,0,,season_start
+23,2,0,,no_elimination
+23,3,1,S23_Jake T. Austin __ Jenna Johnson,single_elimination
+23,4,1,S23_Rick Perry __ Emma Slater,single_elimination
+23,5,2,S23_Babyface __ Allison Holker|S23_Vanilla Ice __ Witney Carson,double_elimination
+23,6,0,,no_elimination
+23,7,1,S23_Amber Rose __ Maksim Chmerkoskiy,single_elimination
+23,8,1,S23_Maureen McCormick __ Artem Chigvintsev,single_elimination
+23,9,1,S23_Ryan Lochte __ Cheryl Burke,single_elimination
+23,10,1,S23_Marilu Henner __ Derek Hough,single_elimination
+23,11,1,S23_Terra Jole __ Sasha Farber,single_elimination;finale_multi_exit
+24,1,0,,season_start
+24,2,0,,no_elimination
+24,3,1,S24_Chris Kattan __ Witney Carson,single_elimination
+24,4,1,S24_Charo __ Keo Motsepe,single_elimination
+24,5,1,S24_Mr. T __ Kym Herjavec,single_elimination
+24,6,1,S24_Erika Jayne __ Gleb Savchenko,single_elimination
+24,7,1,S24_Heather Morris __ Maksim Chmerkoskiy,single_elimination
+24,8,2,S24_Nancy Kerrigan __ Artem Chigvintsev|S24_Nick Viall __ Peta Murgatroyd,double_elimination
+24,9,1,S24_Bonner Bolton __ Sharna Burgess,single_elimination
+24,10,1,S24_Simone Biles __ Sasha Farber,single_elimination;finale_multi_exit
+25,1,0,,season_start
+25,2,0,,no_elimination
+25,3,2,S25_Barbara Corcoran __ Keo Motsepe|S25_Debbie Gibson __ Alan Bersten,double_elimination
+25,4,0,,no_elimination
+25,5,1,S25_Derek Fisher __ Sharna Burgess,single_elimination
+25,6,1,S25_Sasha Pieterse __ Gleb Savchenko,single_elimination
+25,7,1,S25_Nick Lachey __ Peta Murgatroyd,single_elimination
+25,8,2,S25_Nikki Bella __ Artem Chigvintsev|S25_Vanessa Lachey __ Maksim Chmerkoskiy,double_elimination
+25,9,1,S25_Terrell Owens __ Cheryl Burke,single_elimination
+25,10,1,S25_Victoria Arlen __ Valentin Chmerkovskiy,single_elimination;finale_multi_exit
+26,1,0,,season_start
+26,2,2,S26_Jamie Anderson __ Artem Chigvintsev|S26_Johnny Damon __ Emma Slater,double_elimination
+26,3,2,S26_Arike Ogunbowale __ Gleb Savchenko|S26_Kareem Abdul-Jabbar __ Lindsay Arnold,double_elimination
+26,4,3,S26_Chris Mazdzer __ Witney Carson|S26_Jennie Finch Daigle __ Keo Motsepe|S26_Mirai Nagasu __ Alan Bersten,anomaly_drop>2;finale_multi_exit
+27,1,0,,season_start
+27,2,1,S27_Nikki Glaser __ Gleb Savchenko,single_elimination
+27,3,1,S27_Danelle Umstead __ Artem Chigvintsev,single_elimination
+27,4,1,S27_Nancy McKeon __ Valentin Chmerkovskiy,single_elimination
+27,5,1,S27_Tinashe __ Brandon Armstrong,single_elimination
+27,6,0,,no_elimination
+27,7,1,S27_Mary Lou Retton __ Sasha Farber,single_elimination
+27,8,2,S27_DeMarcus Ware __ Lindsay Arnold|S27_John Schneider __ Emma Slater,double_elimination
+27,9,2,S27_Joe Amabile __ Jenna Johnson|S27_Juan Pablo Di Pace __ Cheryl Burke,double_elimination;finale_multi_exit
+28,1,0,,season_start
+28,2,0,,no_elimination
+28,3,2,S28_Mary Wilson __ Brandon Armstrong|S28_Ray Lewis __ Cheryl Burke,double_elimination
+28,4,0,,no_elimination
+28,5,1,S28_Lamar Odom __ Peta Murgatroyd,single_elimination
+28,6,0,,no_elimination
+28,7,1,S28_Sailor Brinkley-Cook __ Valentin Chmerkovskiy,single_elimination
+28,8,1,S28_Karamo Brown __ Jenna Johnson,single_elimination
+28,9,1,S28_Kate Flannery __ Pasha Pashkov,single_elimination
+28,10,1,S28_Sean Spicer __ Lindsay Arnold,single_elimination
+28,11,1,S28_James Van Der Beek __ Emma Slater,single_elimination;finale_multi_exit
+29,1,0,,season_start
+29,2,0,,no_elimination
+29,3,1,S29_Charles Oakley __ Emma Slater,single_elimination
+29,4,1,S29_Carole Baskin __ Pasha Pashkov,single_elimination
+29,5,1,S29_Anne Heche __ Keo Motsepe,single_elimination
+29,6,1,S29_Jesse Metcalfe __ Sharna Burgess,single_elimination
+29,7,1,S29_Veron Davis __ Peta Murgatroyd,single_elimination
+29,8,2,S29_Jeannie Mai __ Brandon Armstrong|S29_Monica Aldama __ Valentin Chmerkovskiy,double_elimination
+29,9,1,S29_Chrishell Stause __ Gleb Savchenko,single_elimination
+29,10,1,S29_AJ McLean __ Cheryl Burke,single_elimination
+29,11,2,S29_Johnny Weir __ Britt Stewart|S29_Skai Jackson __ Alan Bersten,double_elimination;finale_multi_exit
+30,1,0,,season_start
+30,2,0,,no_elimination
+30,3,1,S30_Martin Kove __ Britt Stewart,single_elimination
+30,4,1,S30_Christine Chiu __ Pasha Pashkov,single_elimination
+30,5,2,S30_Brian Austin Green __ Sharna Burgess|S30_Matt James __ Lindsay Arnold,double_elimination
+30,6,1,S30_Melanie C __ Gleb Savchenko,single_elimination
+30,7,1,S30_Kenya Moore __ Brandon Armstrong,single_elimination
+30,8,1,"S30_Mike ""The Miz"" Mizanin __ Witney Carson",single_elimination
+30,9,2,S30_Jimmie Allen __ Emma Slater|S30_Olivia Jade __ Valentin Chmerkovskiy,double_elimination
+30,10,2,S30_Melora Hardin __ Artem Chigvintsev|S30_Suni Lee __ Sasha Farber,double_elimination;finale_multi_exit
+31,1,0,,season_start
+31,2,1,S31_Jason Lewis __ Peta Murgatroyd,single_elimination
+31,3,1,S31_Teresa Giudice __ Pasha Pashkov,single_elimination
+31,4,1,S31_Cheryl Ladd __ Louis van Amstel,single_elimination
+31,5,1,S31_Sam Champion __ Cheryl Burke,single_elimination
+31,6,2,S31_Joseph Baena __ Daniella Karagach|S31_Selma Blair __ Sasha Farber,double_elimination
+31,7,1,S31_Jessie James Decker __ Alan Bersten,single_elimination
+31,8,1,S31_Jordin Sparks __ Brandon Armstrong,single_elimination
+31,9,2,S31_Heidi D'Amelio __ Artem Chigvintsev|S31_Vinny Guadagnino __ Koko Iwasaki,double_elimination
+31,10,2,S31_Daniel Durant __ Britt Stewart|S31_Trevor Donovan __ Emma Slater,double_elimination;finale_multi_exit
+32,1,0,,season_start
+32,2,1,S32_Matt Walsh __ Koko Iwasaki,single_elimination
+32,3,1,S32_Jamie Lynn Spears __ Alan Bersten,single_elimination
+32,4,1,S32_Tyson Beckford __ Jenna Johnson,single_elimination
+32,5,1,S32_Adrian Peterson __ Britt Stewart,single_elimination
+32,6,1,S32_Mira Sorvino __ Gleb Savchenko,single_elimination
+32,7,1,S32_Mauricio Umansky __ Emma Slater,single_elimination
+32,8,1,S32_Lele Pons __ Brandon Armstrong,single_elimination
+32,9,1,S32_Barry Williams __ Peta Murgatroyd,single_elimination
+32,10,1,S32_Harry Jowsey __ Rylee Arnold,single_elimination
+32,11,0,,no_elimination
+33,1,0,,season_start
+33,2,0,,no_elimination
+33,3,2,S33_Anna Delvey __ Ezra Sosa|S33_Tori Spelling __ Pasha Pashkov,double_elimination
+33,4,2,S33_Eric Roberts __ Britt Stewart|S33_Reginald VelJohnson __ Emma Slater,double_elimination
+33,5,1,S33_Brooks Nader __ Gleb Savchenko,single_elimination
+33,6,1,S33_Phaedra Parks __ Val Chmerkovskiy,single_elimination
+33,7,1,S33_Jenn Tran __ Sasha Farber,single_elimination
+33,8,1,S33_Dwight Howard __ Daniella Karagach,single_elimination
+33,9,0,,no_elimination
+34,1,0,,season_start
+34,2,0,,no_elimination
+34,3,2,S34_Baron Davis __ Britt Stewart|S34_Corey Feldman __ Jenna Johnson,double_elimination
+34,4,1,S34_Lauren Jauregui __ Brandon Armstrong,single_elimination
+34,5,1,S34_Hilaria Baldwin __ Gleb Savchenko,single_elimination
+34,6,0,,no_elimination
+34,7,1,S34_Scott Hoying __ Rylee Arnold,single_elimination
+34,8,1,S34_Jen Affleck __ Jan Ravnik,single_elimination
+34,9,1,S34_Danielle Fishel __ Pasha Pashkov,single_elimination
+34,10,1,S34_Andy Richter __ Emma Slater __ Kaitlyn Bristowe (week 9),single_elimination
+34,11,1,S34_Whitney Leavitt __ Mark Ballas,single_elimination;finale_multi_exit
