@@ -152,102 +152,249 @@ def build_season_master_table(diff_summary: pd.DataFrame,
     return master
 
 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from pathlib import Path
+
+
 # -----------------------------
-# 2) 作图（论文友好）
+# 2) 作图（论文友好，最终版）
 # -----------------------------
-def plot_diff_share(master: pd.DataFrame, out_path: Path, low_cov_thr: float = 0.5):
+def _nice_season_ticks(seasons, max_ticks=18):
+    """给 season 生成更易读的 x 轴刻度（自适应稀疏）"""
+    seasons = np.array(sorted(set(int(s) for s in seasons if np.isfinite(s))))
+    if len(seasons) == 0:
+        return []
+    # 控制最多显示 max_ticks 个刻度
+    step = max(1, int(np.ceil(len(seasons) / max_ticks)))
+    return seasons[::step].tolist()
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_diff_share(master, out_path, low_cov_thr=0.5):
     """
     Figure A：diff_share vs season
-    - 单色点（避免颜色噪音）
-    - 点大小编码 coverage
-    - 低 coverage season 用文字标注（避免误解极端值）
+    - coverage 分档 -> 用不同颜色表示
+    - 同档（同大小）同色：图里与图例完全一致
     """
-    plot_df = master.sort_values("season").copy()
-    plot_df = plot_df[plot_df["season"].notna()].copy()
 
-    cov = plot_df["coverage"].fillna(0.0).clip(0, 1)
-    sizes = 30 + 220 * cov  # size ∝ coverage
+    df = master.sort_values("season").copy()
+    df = df[df["season"].notna()].copy()
 
-    fig, ax = plt.subplots(figsize=(9, 4))
-    ax.scatter(plot_df["season"], plot_df["diff_share"], s=sizes, alpha=0.8)
+    seasons = df["season"].astype(int).to_numpy()
+    y = df["diff_share"].to_numpy(dtype=float)
+    cov = df["coverage"].fillna(0).to_numpy(dtype=float)
+    cov = np.clip(cov, 0, 1)
 
-    ax.set_title("Method Disagreement Share by Season")
+    # --- 1) 定义 coverage 分档（四档） ---
+    # 你也可以改阈值：例如 0.25/0.5/0.75/1.0 是“代表值”
+    def cov_bin(c):
+        if c < 0.375:
+            return 0.25
+        elif c < 0.625:
+            return 0.50
+        elif c < 0.875:
+            return 0.75
+        else:
+            return 1.00
+
+    cov_level = np.array([cov_bin(c) for c in cov])
+
+    # --- 2) 每档对应一个固定颜色 + 固定大小 ---
+    # 颜色不必手动指定也行，但你想“不同大小不同颜色”就必须明确映射
+    # 这里用 matplotlib tab10 的前四个（论文干净）
+    level_order = [0.25, 0.50, 0.75, 1.00]
+    level_color = {
+        0.25: "C0",
+        0.50: "C1",
+        0.75: "C2",
+        1.00: "C3",
+    }
+    level_size = {   # 同档同大小（满足“同意大小同一颜色”）
+        0.25: 70,
+        0.50: 140,
+        0.75: 240,
+        1.00: 360,
+    }
+
+    colors = [level_color[l] for l in cov_level]
+    sizes  = [level_size[l]  for l in cov_level]
+
+    fig, ax = plt.subplots(figsize=(10.8, 4.2))
+    ax.scatter(
+        seasons, y,
+        s=sizes,
+        c=colors,
+        alpha=0.90,
+        edgecolors="white",
+        linewidths=0.8
+    )
+
+    ax.set_title("Method Disagreement Share by Season", fontsize=14)
     ax.set_xlabel("Season")
-    ax.set_ylabel("Diff Share")
+    ax.set_ylabel("Disagreement share (rank != percent)")
     ax.set_ylim(-0.02, 1.05)
 
-    # x 轴刻度（season 多时可略去部分刻度；这里保留全刻度但旋转）
-    seasons = plot_df["season"].astype(int).tolist()
-    ax.set_xticks(seasons)
-    ax.tick_params(axis="x", rotation=45)
+    # x 轴刻度（每2季一个）
+    ticks = sorted(set(seasons.tolist()))[::2]
+    ax.set_xticks(ticks)
+    ax.grid(True, axis="y", alpha=0.25)
 
-    # size 图例（给 3 个参考 coverage）
-    for cov_ref in [0.25, 0.50, 0.75]:
-        ax.scatter([], [], s=30 + 220 * cov_ref, alpha=0.8, label=f"coverage={cov_ref:.2f}")
-    ax.legend(title="Point size encodes coverage", loc="upper left", frameon=False)
+    # --- 3) 图例：每档一个示例点（颜色与大小完全一致）---
+    for lv in level_order:
+        ax.scatter(
+            [], [], s=level_size[lv], c=level_color[lv],
+            alpha=0.90, edgecolors="white", linewidths=0.8,
+            label=f"coverage={lv:.2f}"
+        )
+    ax.legend(
+        title="Coverage bins (color & size)",
+        loc="center left",
+        bbox_to_anchor=(1.01, 0.5),
+        frameon=False
+    )
 
-    # 标注低 coverage 季（避免 S33 这类被误读为“强结论”）
-    low = plot_df[(plot_df["coverage"].notna()) & (plot_df["coverage"] < low_cov_thr)]
+    # --- 4) 标注低 coverage 且 diff_share 高的点（可选）---
+    # 注意：这里 low_cov_thr 仍按原始 coverage（连续值）判断
+    low = df[(df["coverage"] < low_cov_thr) & (df["diff_share"] >= 0.5)]
     for _, r in low.iterrows():
         ax.annotate(
-            f"S{int(r['season'])}\n(cov={r['coverage']:.2f})",
-            (r["season"], r["diff_share"]),
+            f"S{int(r['season'])} (cov={r['coverage']:.2f})",
+            (int(r["season"]), float(r["diff_share"])),
             textcoords="offset points",
-            xytext=(6, 6),
-            fontsize=8,
+            xytext=(6, 8),
+            fontsize=9
         )
 
     fig.tight_layout()
-    fig.savefig(out_path, dpi=300)
+    fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 
 def plot_fan_favor_delta(master: pd.DataFrame, out_path: Path,
                          low_cov_thr: float = 0.5,
-                         plot_judge_delta: bool = False):
+                         plot_judge_delta: bool = True):
     """
-    Figure B：fan_favor_delta vs season
-    - y=0 参考线
-    - 低 coverage season 标星（用于提醒“估计不稳定”）
-    - 可选叠加 judge_favor_delta（建议附录或次要展示）
+    Figure B：fan_favor_delta & judge_favor_delta vs season
+    - fan: 圆点 o
+    - judge: 叉号 x（不同符号表示）
+    - 低 coverage 用星标（只标 fan，避免太乱）
+    - 稳健 y 轴：用 5%~95% 分位 + padding
+    - 极端点：箭头+注释保留信息
     """
-    plot_df = master.sort_values("season").copy()
-    plot_df = plot_df[plot_df["season"].notna()].copy()
+    df = master.sort_values("season").copy()
+    df = df[df["season"].notna()].copy()
 
-    fig, ax = plt.subplots(figsize=(9, 4))
+    seasons = df["season"].astype(int).to_numpy()
+    y_fan = df["fan_favor_delta"].to_numpy(dtype=float)
 
-    # 主：fan_favor_delta
-    ax.scatter(plot_df["season"], plot_df["fan_favor_delta"], alpha=0.9, label="fan_favor_delta")
+    # judge 可能有 NaN，先取出来
+    y_judge = df["judge_favor_delta"].to_numpy(dtype=float) if "judge_favor_delta" in df.columns else None
 
-    # 可选：judge_favor_delta（对照）
-    if plot_judge_delta and ("judge_favor_delta" in plot_df.columns):
+    fig, ax = plt.subplots(figsize=(10.8, 4.2))
+
+    # fan：圆点
+    sc_fan = ax.scatter(
+        seasons, y_fan,
+        marker="o",
+        alpha=0.9,
+        edgecolors="white",
+        linewidths=0.8,
+        label="fan_favor_delta"
+    )
+    main_color = sc_fan.get_facecolor()[0]
+
+    # judge：叉号（同色，不引入额外编码）
+    if plot_judge_delta and (y_judge is not None):
         ax.scatter(
-            plot_df["season"],
-            plot_df["judge_favor_delta"],
+            seasons, y_judge,
             marker="x",
-            alpha=0.9,
-            label="judge_favor_delta",
+            alpha=0.85,
+            linewidths=1.2,
+            color=main_color,   # 关键：同色，仅用符号区分
+            label="judge_favor_delta"
         )
 
     # 0 线
-    ax.axhline(0, linestyle="--", color="gray", linewidth=1)
+    ax.axhline(0, linestyle="--", linewidth=1, color="gray")
 
-    # 低 coverage 标星（只标在 fan_favor_delta 上）
-    low = plot_df[(plot_df["coverage"].notna()) & (plot_df["coverage"] < low_cov_thr)]
-    if not low.empty:
-        ax.scatter(low["season"], low["fan_favor_delta"], marker="*", s=120, label=f"coverage<{low_cov_thr:g}")
+    # x 轴刻度（每2季一个）
+    ax.set_xticks(sorted(set(seasons.tolist()))[::2])
+    ax.tick_params(axis="x", rotation=0)
 
-    ax.set_title("Fan Favor Delta by Season")
+    ax.grid(True, axis="y", alpha=0.25)
+
+    ax.set_title("Favor Delta by Season", fontsize=14)
     ax.set_xlabel("Season")
-    ax.set_ylabel("Delta (Percent - Rank)")
-    seasons = plot_df["season"].astype(int).tolist()
-    ax.set_xticks(seasons)
-    ax.tick_params(axis="x", rotation=45)
+    ax.set_ylabel("Delta = (percent) − (rank)")
 
-    ax.legend(loc="best", frameon=False)
+    # ---- 稳健 y 轴：同时考虑 fan & judge（如果画了 judge）----
+    y_all = pd.Series(y_fan).dropna()
+    if plot_judge_delta and (y_judge is not None):
+        y_all = pd.concat([y_all, pd.Series(y_judge).dropna()], ignore_index=True)
+
+    if len(y_all) >= 8:
+        q05, q95 = float(y_all.quantile(0.05)), float(y_all.quantile(0.95))
+        pad = 0.20 * max(1e-6, (q95 - q05))
+        y_low, y_high = q05 - pad, q95 + pad
+        ax.set_ylim(y_low, y_high)
+
+        # 极端点（fan）用箭头标注
+        out_hi = df[df["fan_favor_delta"] > y_high]
+        out_lo = df[df["fan_favor_delta"] < y_low]
+        for _, r in out_hi.iterrows():
+            x = int(r["season"]); yv = float(r["fan_favor_delta"])
+            ax.annotate(
+                f"S{x}\n{yv:.2f}",
+                (x, y_high),
+                textcoords="offset points",
+                xytext=(0, 6),
+                ha="center",
+                fontsize=9,
+                arrowprops=dict(arrowstyle="-|>", lw=0.8, color="gray")
+            )
+        for _, r in out_lo.iterrows():
+            x = int(r["season"]); yv = float(r["fan_favor_delta"])
+            ax.annotate(
+                f"S{x}\n{yv:.2f}",
+                (x, y_low),
+                textcoords="offset points",
+                xytext=(0, -18),
+                ha="center",
+                fontsize=9,
+                arrowprops=dict(arrowstyle="-|>", lw=0.8, color="gray")
+            )
+
+    # 低 coverage：星标叠加在 fan 点上
+    low = df[df["coverage"] < low_cov_thr]
+    if not low.empty:
+        ax.scatter(
+            low["season"].astype(int),
+            low["fan_favor_delta"].astype(float),
+            marker="*",
+            s=180,
+            color=main_color,
+            edgecolors="white",
+            linewidths=0.8,
+            label=f"coverage<{low_cov_thr:g}"
+        )
+
+    # legend 图外
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1.01, 0.5),
+        frameon=False
+    )
+
     fig.tight_layout()
-    fig.savefig(out_path, dpi=300)
+    fig.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
+
+
+
 
 
 # -----------------------------

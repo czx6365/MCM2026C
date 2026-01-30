@@ -105,8 +105,9 @@ def get_pageviews(title: str, start_yyyymmdd: str, end_yyyymmdd: str,
     return (total, mean, peak)
 
 def main():
-    inp = "celebrity_name_all_unique.csv"
-    out = "celebrity_popularity_wiki_pageviews.csv"
+    base_dir = Path(__file__).resolve().parent
+    inp = base_dir / "celebrity_name_all_unique.csv"
+    out = base_dir / "celebrity_popularity_wiki_pageviews.csv"
 
     # 你可以把时间窗设成“某一季播出期”或“整个比赛期间”
     # 下面先给一个示例：2025-01-01 到 2025-12-31
@@ -118,7 +119,7 @@ def main():
 
     # 断点续跑：若输出已存在，则跳过已完成的 name
     done = set()
-    if Path(out).exists():
+    if out.exists():
         try:
             old = pd.read_csv(out)
             if "celebrity_name" in old.columns:
