@@ -1,0 +1,26 @@
+﻿season,celebrity,Pr_same_placement(percent_vs_rank),percent_mean_place,percent_p05,percent_p95,percent_Pr_win,rank_mean_place,rank_p05,rank_p95,rank_Pr_win,percentSave_mean_place,percentSave_p05,percentSave_p95,percentSave_Pr_win,rankSave_mean_place,rankSave_p05,rankSave_p95,rankSave_Pr_win,delta_rank_minus_percent,delta_rankSave_minus_percent
+2,Jerry Rice,0.7255,1.6265,1.0,8.0,0.909,2.2885,1.0,8.0,0.795,2.028,1.0,8.0,0.8345,3.3185,1.0,8.0,0.5685,0.6619999999999999,1.6919999999999997
+4,Billy Ray Cyrus,0.648,5.0905,4.0,6.0,0.0,4.925,4.0,5.0,0.0,5.6215,5.0,7.0,0.0,5.7975,5.0,7.0,0.0,-0.16549999999999976,0.7070000000000007
+11,Bristol Palin,0.767,1.287,1.0,1.0,0.958,2.332,1.0,8.0,0.796,2.754,1.0,8.0,0.688,3.6545,1.0,8.0,0.5425,1.045,2.3675
+27,Bobby Bones,0.5995,2.1685,2.0,2.0,0.014,3.6975,1.0,10.0,0.0715,3.0075,1.0,7.0,0.1445,3.848,1.0,10.0,0.052,1.529,1.6795
+
+
+
+
+Season 2 – Jerry Rice
+在 Percent 规则下，Jerry Rice 的平均名次约为前 2 名，夺冠概率超过 90%；
+改用 Rank 规则后，其平均名次明显下降，而加入 Judges Save 后名次进一步后移。
+这表明其成功高度依赖于粉丝投票幅度的保留。
+
+Season 4 – Billy Ray Cyrus
+Percent 与 Rank 规则下的名次分布高度一致，说明其比赛结果对赛制选择相对稳健；
+但 Judges Save 仍会导致名次略有下降，反映其在评委端的持续劣势。
+
+Season 11 – Bristol Palin
+Percent 规则下几乎锁定冠军，而 Rank 规则显著削弱其优势；
+加入 Judges Save 后，其平均名次大幅后移，显示评委干预对该类争议选手具有决定性影响。
+
+Season 27 – Bobby Bones
+Season 27 对赛制最为敏感。在 Percent 规则下，其名次显著优于 Rank 规则；
+仅改变合并方式即可在相当比例的模拟中改变最终结果。
+进一步引入 Judges Save 后，其成绩继续下降，说明该赛季的争议主要源于赛制设计而非粉丝支持本身。
