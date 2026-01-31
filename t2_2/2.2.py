@@ -41,8 +41,8 @@ import matplotlib.pyplot as plt
 # 题面建议的争议案例（可自行扩展）
 # -----------------------------
 DEFAULT_CASES = [
-    (2,  "Jerry Rice"),
-    (4,  "Billy Ray Cyrus"),
+    (2, "Jerry Rice"),
+    (4, "Billy Ray Cyrus"),
     (11, "Bristol Palin"),
     (27, "Bobby Bones"),
 ]
@@ -70,7 +70,11 @@ def judge_total_by_week(df_season: pd.DataFrame, week: int) -> pd.Series:
     返回df_season中每位选手在该week的评委总分。
     列名形如：week3_judge2_score
     """
-    cols = [c for c in df_season.columns if c.startswith(f"week{week}_") and c.endswith("_score")]
+    cols = [
+        c
+        for c in df_season.columns
+        if c.startswith(f"week{week}_") and c.endswith("_score")
+    ]
     if not cols:
         return pd.Series([np.nan] * len(df_season), index=df_season.index)
 
@@ -103,14 +107,23 @@ def rank_1_is_best(x: pd.Series) -> pd.Series:
 # -----------------------------
 # fan share 不确定性采样：三角分布近似
 # -----------------------------
-def triangular_sample(lo: float, mode: float, hi: float, rng: np.random.Generator) -> float:
+def triangular_sample(
+    lo: float, mode: float, hi: float, rng: np.random.Generator
+) -> float:
     """
     用三角分布在[lo, hi]中采样，mode为峰值点。
     若参数不合法则回退到截断后的mode。
     """
-    if any(map(lambda v: v is None or (isinstance(v, float) and np.isnan(v)), [lo, mode, hi])):
+    if any(
+        map(
+            lambda v: v is None or (isinstance(v, float) and np.isnan(v)),
+            [lo, mode, hi],
+        )
+    ):
         return np.nan
-    lo = float(lo); mode = float(mode); hi = float(hi)
+    lo = float(lo)
+    mode = float(mode)
+    hi = float(hi)
     if hi < lo:
         lo, hi = hi, lo
     mode = min(max(mode, lo), hi)
@@ -345,54 +358,58 @@ def replay_season_once(
 
             if cfg.use_judges_save and len(bottom2_names) == 2:
                 # judges在bottom2中投票决定淘汰谁
-                Sb2 = {nm: float(S2.loc[dfw2[dfw2["celebrity_name"] == nm].index[0]]) for nm in bottom2_names}
+                Sb2 = {
+                    nm: float(S2.loc[dfw2[dfw2["celebrity_name"] == nm].index[0]])
+                    for nm in bottom2_names
+                }
                 elim_name = judges_choose_elim(bottom2_names, Sb2, rng, cfg.beta)
 
             elim_order.append((w, elim_name))
             if elim_name in alive:
                 alive.remove(elim_name)
 
-    # 赛季结束：对剩余选手做最终排序（用最后一个有评委分的周）
+
+    # =========================
+    # 赛季结束：最终名次判定
+    # =========================
     place_map: Dict[str, int] = {}
     alive_final = list(alive)
 
-    if last_week_with_scores is None or len(alive_final) == 0:
-        # 极端情况：没有任何周可用，直接按字母序
-        ranking = sorted(all_names)
+    if len(alive_final) == 0:
+        ranking = []
+    elif len(alive_final) == 1:
+        ranking = alive_final
     else:
-        dfl = df_season[df_season["celebrity_name"].isin(alive_final)].copy()
-        Sl = judge_total_by_week(dfl, last_week_with_scores)
-        # fan share用该周的p_map（作为最终排序的合理“最可能”）
-        fan_vals_last = []
-        for nm in dfl["celebrity_name"].tolist():
-            row = None
-            if (last_week_with_scores, nm) in fan_key.index:
-                row = fan_key.loc[(last_week_with_scores, nm)]
-            if row is None:
-                fan_vals_last.append(0.0)
-            else:
-                v = float(row.get("p_map", row.get("p_mean", 0.0)))
-                fan_vals_last.append(v if not np.isnan(v) else 0.0)
+        # ===== 核心修正点 =====
+        # 决赛/无淘汰阶段：仅使用 fan votes 决定最终名次
+        # 使用最后一周 fan_share（p_map）作为最终投票结果
+        finals_week = None
+        for w in reversed(active_weeks):
+            if w in fan_season["week"].values:
+                finals_week = w
+                break
 
-        fan_last = np.array(fan_vals_last, dtype=float)
-        fan_last = np.nan_to_num(fan_last, nan=0.0)
+        fan_last = []
+        for nm in alive_final:
+            row = fan_season[
+                (fan_season["week"] == finals_week) & (fan_season["celebrity_name"] == nm)
+            ]
+            if row.empty:
+                fan_last.append(0.0)
+            else:
+                v = float(row.iloc[0].get("p_map", row.iloc[0].get("p_mean", 0.0)))
+                fan_last.append(0.0 if np.isnan(v) else v)
+
+        fan_last = np.array(fan_last, dtype=float)
         if fan_last.sum() > 0:
             fan_last = fan_last / fan_last.sum()
         else:
             fan_last = np.ones_like(fan_last) / len(fan_last)
 
-        score_last = combined_scores(cfg.scheme, Sl, fan_last)
+        # fan votes 高 → 名次好
+        order = np.argsort(-fan_last)
+        ranking_alive = [alive_final[i] for i in order]
 
-        # 生成“最好到最差”的排序
-        # percent：分数越大越好；rank：分数越小越好
-        if cfg.scheme == "percent":
-            best_to_worst = np.argsort(-score_last)
-        else:
-            best_to_worst = np.argsort(score_last)
-
-        ranking_alive = dfl.iloc[best_to_worst]["celebrity_name"].tolist()
-
-        # 淘汰者按淘汰顺序的逆序排在后面（越早淘汰名次越差）
         eliminated = [nm for _, nm in elim_order]
         ranking = ranking_alive + eliminated[::-1]
 
@@ -425,7 +442,7 @@ def mc_placements_for_star(
             cfg=cfg,
             active_weeks=weeks,
             elim_count_week=elim_counts,
-            rng=rng
+            rng=rng,
         )
         places.append(place_map.get(star, np.nan))
 
@@ -438,8 +455,8 @@ def summarize_places(x: np.ndarray) -> Dict[str, float]:
         return {"mean": np.nan, "p05": np.nan, "p95": np.nan}
     return {
         "mean": float(np.mean(x)),
-        "p05":  float(np.quantile(x, 0.05)),
-        "p95":  float(np.quantile(x, 0.95)),
+        "p05": float(np.quantile(x, 0.05)),
+        "p95": float(np.quantile(x, 0.95)),
     }
 
 
@@ -447,10 +464,7 @@ def summarize_places(x: np.ndarray) -> Dict[str, float]:
 # 画图：controversy 曲线（评委rank vs fan rank）
 # -----------------------------
 def plot_controversy_curve(
-    outpath: str,
-    df_season: pd.DataFrame,
-    fan_season: pd.DataFrame,
-    star: str
+    outpath: str, df_season: pd.DataFrame, fan_season: pd.DataFrame, star: str
 ):
     weeks = available_weeks(df_season)
     fan_key = fan_season.set_index(["week", "celebrity_name"])
@@ -510,11 +524,7 @@ def plot_controversy_curve(
 # -----------------------------
 # 画图：名次分布（四种规则箱线图）
 # -----------------------------
-def plot_placement_boxplot(
-    outpath: str,
-    star: str,
-    placements: Dict[str, np.ndarray]
-):
+def plot_placement_boxplot(outpath: str, star: str, placements: Dict[str, np.ndarray]):
     labels = list(placements.keys())
     data = [placements[k][~np.isnan(placements[k])] for k in labels]
 
@@ -539,18 +549,31 @@ def main():
     default_out = this_dir
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--raw", default=default_raw,
-                        help="Path to 2026_MCM_Problem_C_Data.csv")
-    parser.add_argument("--fan", default=default_fan,
-                        help="Path to fan_vote_estimates.csv")
-    parser.add_argument("--outdir", default=default_out,
-                        help="Output directory")
-    parser.add_argument("--mc", type=int, default=2000,
-                        help="Monte Carlo runs per scenario (e.g., 2000)")
-    parser.add_argument("--beta", type=float, default=float("nan"),
-                        help="If set (not NaN), use probabilistic judges-save with this beta; else deterministic")
-    parser.add_argument("--fan_mode", default="p_map", choices=["p_map", "p_mean"],
-                        help="Mode used in triangular sampling")
+    parser.add_argument(
+        "--raw", default=default_raw, help="Path to 2026_MCM_Problem_C_Data.csv"
+    )
+    parser.add_argument(
+        "--fan", default=default_fan, help="Path to fan_vote_estimates.csv"
+    )
+    parser.add_argument("--outdir", default=default_out, help="Output directory")
+    parser.add_argument(
+        "--mc",
+        type=int,
+        default=2000,
+        help="Monte Carlo runs per scenario (e.g., 2000)",
+    )
+    parser.add_argument(
+        "--beta",
+        type=float,
+        default=float("nan"),
+        help="If set (not NaN), use probabilistic judges-save with this beta; else deterministic",
+    )
+    parser.add_argument(
+        "--fan_mode",
+        default="p_map",
+        choices=["p_map", "p_mean"],
+        help="Mode used in triangular sampling",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.outdir, exist_ok=True)
@@ -559,7 +582,16 @@ def main():
     fan = pd.read_csv(args.fan)
 
     # 基本清洗：只保留我们需要的列（减少内存）
-    needed = ["season", "week", "celebrity_name", "p_mean", "p_lo90", "p_hi90", "p_map", "eliminated_this_week"]
+    needed = [
+        "season",
+        "week",
+        "celebrity_name",
+        "p_mean",
+        "p_lo90",
+        "p_hi90",
+        "p_map",
+        "eliminated_this_week",
+    ]
     for c in needed:
         if c not in fan.columns:
             # 若缺列也不强制报错；但lo/hi缺失会让采样退化
@@ -597,18 +629,42 @@ def main():
             star = cand
 
         # 四种场景配置
-        cfg_percent = ReplayConfig(scheme="percent", use_judges_save=False, beta=None,
-                                   mc=args.mc, seed=season * 101 + 1, fan_mode=args.fan_mode)
-        cfg_rank    = ReplayConfig(scheme="rank",    use_judges_save=False, beta=None,
-                                   mc=args.mc, seed=season * 101 + 2, fan_mode=args.fan_mode)
-        cfg_percent_save = ReplayConfig(scheme="percent", use_judges_save=True, beta=beta,
-                                        mc=args.mc, seed=season * 101 + 3, fan_mode=args.fan_mode)
-        cfg_rank_save    = ReplayConfig(scheme="rank",    use_judges_save=True, beta=beta,
-                                        mc=args.mc, seed=season * 101 + 4, fan_mode=args.fan_mode)
+        cfg_percent = ReplayConfig(
+            scheme="percent",
+            use_judges_save=False,
+            beta=None,
+            mc=args.mc,
+            seed=season * 101 + 1,
+            fan_mode=args.fan_mode,
+        )
+        cfg_rank = ReplayConfig(
+            scheme="rank",
+            use_judges_save=False,
+            beta=None,
+            mc=args.mc,
+            seed=season * 101 + 2,
+            fan_mode=args.fan_mode,
+        )
+        cfg_percent_save = ReplayConfig(
+            scheme="percent",
+            use_judges_save=True,
+            beta=beta,
+            mc=args.mc,
+            seed=season * 101 + 3,
+            fan_mode=args.fan_mode,
+        )
+        cfg_rank_save = ReplayConfig(
+            scheme="rank",
+            use_judges_save=True,
+            beta=beta,
+            mc=args.mc,
+            seed=season * 101 + 4,
+            fan_mode=args.fan_mode,
+        )
 
         # 跑MC
-        p_pl  = mc_placements_for_star(df_season, fan_season, star, cfg_percent)
-        r_pl  = mc_placements_for_star(df_season, fan_season, star, cfg_rank)
+        p_pl = mc_placements_for_star(df_season, fan_season, star, cfg_percent)
+        r_pl = mc_placements_for_star(df_season, fan_season, star, cfg_rank)
         ps_pl = mc_placements_for_star(df_season, fan_season, star, cfg_percent_save)
         rs_pl = mc_placements_for_star(df_season, fan_season, star, cfg_rank_save)
 
@@ -621,8 +677,8 @@ def main():
         ps_win = float(np.mean(ps_pl == 1))
         rs_win = float(np.mean(rs_pl == 1))
 
-        sp  = summarize_places(p_pl)
-        sr  = summarize_places(r_pl)
+        sp = summarize_places(p_pl)
+        sr = summarize_places(r_pl)
         sps = summarize_places(ps_pl)
         srs = summarize_places(rs_pl)
 
@@ -630,38 +686,37 @@ def main():
             "season": season,
             "celebrity": star,
             "Pr_same_placement(percent_vs_rank)": same_pr,
-
             "percent_mean_place": sp["mean"],
             "percent_p05": sp["p05"],
             "percent_p95": sp["p95"],
             "percent_Pr_win": p_win,
-
             "rank_mean_place": sr["mean"],
             "rank_p05": sr["p05"],
             "rank_p95": sr["p95"],
             "rank_Pr_win": r_win,
-
             "percentSave_mean_place": sps["mean"],
             "percentSave_p05": sps["p05"],
             "percentSave_p95": sps["p95"],
             "percentSave_Pr_win": ps_win,
-
             "rankSave_mean_place": srs["mean"],
             "rankSave_p05": srs["p05"],
             "rankSave_p95": srs["p95"],
             "rankSave_Pr_win": rs_win,
-
             "delta_rank_minus_percent": sr["mean"] - sp["mean"],
             "delta_rankSave_minus_percent": srs["mean"] - sp["mean"],
         }
         summary_rows.append(row)
 
         # 画图：controversy curve
-        fig1 = os.path.join(args.outdir, f"fig_case_S{season}_{star}_controversy.png".replace(" ", "_"))
+        fig1 = os.path.join(
+            args.outdir, f"fig_case_S{season}_{star}_controversy.png".replace(" ", "_")
+        )
         plot_controversy_curve(fig1, df_season, fan_season, star)
 
         # 画图：placement boxplot
-        fig2 = os.path.join(args.outdir, f"fig_case_S{season}_{star}_placement.png".replace(" ", "_"))
+        fig2 = os.path.join(
+            args.outdir, f"fig_case_S{season}_{star}_placement.png".replace(" ", "_")
+        )
         placements = {
             "Percent": p_pl,
             "Rank": r_pl,
