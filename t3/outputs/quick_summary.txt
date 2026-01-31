@@ -1,0 +1,10 @@
+=== Quick Summary ===
+Judges model R2 (std y): 0.6553
+Fans   model R2 (std y, WLS): 0.4843
+
+-- Incremental R2 of adding pro (weekly) --
+ΔR2 (Judges, add pro): 0.0179
+ΔR2 (Fans,   add pro): 0.0445
+
+-- Pro effects correlation (judges vs fans, standardized) --
+corr = 0.03284420660476182
