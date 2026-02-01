@@ -18,6 +18,42 @@ import numpy as np
 import pandas as pd
 
 
+def _normalize_vote_share(df: pd.DataFrame, col: str) -> pd.Series:
+    """
+    Clip negative values and normalize per (season, week).
+    If the weekly sum is 0 or missing, assign uniform shares.
+    """
+    v = df[col].astype(float).clip(lower=0.0)
+    group_sum = v.groupby([df["season"], df["week"]]).transform("sum")
+    group_cnt = v.groupby([df["season"], df["week"]]).transform("count")
+    out = v / group_sum.replace(0.0, np.nan)
+    out = out.fillna(1.0 / group_cnt.replace(0, np.nan))
+    return out
+
+
+def _fill_rel_ci80(x: pd.DataFrame, df_unc: Optional[pd.DataFrame]) -> pd.Series:
+    """
+    Fill rel_ci80 with week median -> global median -> 0.5 fallback.
+    """
+    if "rel_ci80" not in x.columns:
+        return pd.Series([0.5] * len(x), index=x.index, dtype=float)
+
+    rel = x["rel_ci80"].astype(float)
+    week_median = rel.median(skipna=True)
+    if np.isnan(week_median):
+        week_median = np.nan
+
+    global_median = np.nan
+    if df_unc is not None and "rel_ci80" in df_unc.columns:
+        global_median = float(pd.to_numeric(df_unc["rel_ci80"], errors="coerce").median(skipna=True))
+    if np.isnan(global_median):
+        global_median = 0.5
+
+    rel = rel.fillna(week_median)
+    rel = rel.fillna(global_median)
+    return rel
+
+
 def _find_out_dir(t2_dir: Path) -> Path:
     if not t2_dir.exists():
         raise FileNotFoundError(f"Missing t2_1 directory: {t2_dir}")
@@ -82,6 +118,10 @@ def build_input_data(
         pred["vote_share_hat"] = pred["fan_share"]
     elif "vote_share_hat" not in pred.columns:
         raise ValueError("weekly_contestant_metrics.csv missing fan_share/vote_share_hat")
+
+    # Basic sanity: non-negative judge totals and normalized vote shares
+    pred["judge_total"] = pd.to_numeric(pred["judge_total"], errors="coerce").fillna(0.0).clip(lower=0.0)
+    pred["vote_share_hat"] = _normalize_vote_share(pred, "vote_share_hat")
 
     # Keep a compact, explicit column order
     base_cols = [
@@ -153,8 +193,15 @@ def build_input_data(
             .rank(ascending=False, method="min")
         )
 
+    # Cap rank_gap by n_active-1 to avoid extreme artifacts
+    ext["n_active"] = ext.groupby(["season", "week"])["celebrity_name"].transform("count")
     ext["rank_gap"] = (ext["judge_rank"] - ext["fan_rank"]).abs()
-    q = ext["rank_gap"].quantile(extreme_quantile)
+    ext["rank_gap"] = ext["rank_gap"].clip(lower=0.0, upper=(ext["n_active"] - 1).clip(lower=0))
+
+    # Robust quantile (avoid degenerate weeks)
+    if not (0.0 < extreme_quantile < 1.0):
+        extreme_quantile = 0.96
+    q = ext.loc[ext["n_active"] >= 3, "rank_gap"].quantile(extreme_quantile)
     threshold = int(np.ceil(q)) if np.isfinite(q) else 0
 
     ext["disagreement_direction"] = np.where(
@@ -379,7 +426,8 @@ def method_uncertainty_geometric_elim(
             on=["season", "week", "celebrity_name"],
             how="left",
         )
-        u_F = x["rel_ci80"].mean() if "rel_ci80" in x.columns else 0.5
+        x["rel_ci80"] = _fill_rel_ci80(x, df_unc)
+        u_F = x["rel_ci80"].mean()
         c_F = 1.0 / (1.0 + u_F + eps)
     else:
         c_F = 0.5
@@ -453,6 +501,18 @@ def run_analysis(data_dir: Path, out_dir: Path) -> None:
     df_ext["season"] = df_ext["season"].astype(int)
     df_ext["week"] = df_ext["week"].astype(int)
 
+    # Normalize vote shares and clip negatives in analysis stage as well
+    if "vote_share_hat" in df_pred.columns:
+        df_pred["vote_share_hat"] = _normalize_vote_share(df_pred, "vote_share_hat")
+    if "judge_total" in df_pred.columns:
+        df_pred["judge_total"] = pd.to_numeric(df_pred["judge_total"], errors="coerce").fillna(0.0).clip(lower=0.0)
+
+    ext_names_by_week = (
+        df_ext.groupby(["season", "week"])["celebrity_name"]
+        .apply(lambda s: set(s.astype(str).tolist()))
+        .to_dict()
+    )
+
     rows = []
     debug_rows = []
 
@@ -476,8 +536,7 @@ def run_analysis(data_dir: Path, out_dir: Path) -> None:
             sw, k, df_unc=df_unc
         )
 
-        ext_sw = df_ext[(df_ext["season"] == s) & (df_ext["week"] == w)]
-        ext_names = set(ext_sw["celebrity_name"].astype(str).tolist())
+        ext_names = ext_names_by_week.get((s, w), set())
         has_extreme = int(len(ext_names) > 0)
 
         rows.append({
