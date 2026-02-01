@@ -90,7 +90,7 @@ def compute_week_judge_totals(df: pd.DataFrame, week_cols: Dict[int, List[str]])
     out = df.copy()
     for week, cols in week_cols.items():
         # 评委列可能有 NaN，sum(skipna=True) 会自动忽略
-        out[f"week{week}_judge_total"] = out[cols].sum(axis=1, skipna=True)
+        out[f"week{week}_judge_total"] = out[cols].sum(axis=1, skipna=True, min_count=1)
     return out
 
 
@@ -228,8 +228,8 @@ def compute_distance_percent(names: List[str], judge_totals: Dict[str, float],
                              p: np.ndarray, elim_set: Set[str]) -> float:
     """
     Percent 赛制软距离：
-    d = max(0, max(C_e) - min(C_safe))
-    若真实淘汰者整体分数都不高于幸存者，则 d=0。
+    用“淘汰者 vs 幸存者”的成对违反幅度度量：
+    d = mean(max(0, C_e - C_safe))，全一致时 d=0。
     """
     if len(elim_set) == 0 or len(elim_set) == len(names):
         return 0.0
@@ -240,29 +240,44 @@ def compute_distance_percent(names: List[str], judge_totals: Dict[str, float],
     elim_mask = np.array([nm in elim_set for nm in names], dtype=bool)
     if not np.any(elim_mask) or np.all(elim_mask):
         return 0.0
-    elim_max = float(np.max(c_vals[elim_mask]))
-    safe_min = float(np.min(c_vals[~elim_mask]))
-    return float(max(0.0, elim_max - safe_min))
+    elim_scores = c_vals[elim_mask]
+    safe_scores = c_vals[~elim_mask]
+    diff = elim_scores[:, None] - safe_scores[None, :]
+    violations = diff[diff > 0]
+    if violations.size == 0:
+        return 0.0
+    viol_frac = float(violations.size / diff.size) if diff.size > 0 else 0.0
+    mean_v = float(np.mean(violations))
+    max_v = float(np.max(violations))
+    return float((mean_v + 0.75 * max_v) * (1.0 + viol_frac))
 
 
 def compute_distance_rank(names: List[str], judge_totals: Dict[str, float],
                           p: np.ndarray, elim_set: Set[str], delta: float) -> float:
     """
-    Rank 赛制软距离（连续 proxy）：
-    S = z(J) + z(log(p+delta)), d = max(0, max(S_e) - min(S_safe))
+    Rank 赛制软距离（rank-gap-aware）：
+    以 R_sum = rank(J) + rank(F) 为基准，度量淘汰/幸存之间的成对“rank gap”。
     """
     if len(elim_set) == 0 or len(elim_set) == len(names):
         return 0.0
-    j_scores = np.array([judge_totals[nm] for nm in names], dtype=float)
-    z_j = zscore(j_scores)
-    z_f = zscore(np.log(p + delta))
-    s_vals = z_j + z_f
+    j_scores = [judge_totals[nm] for nm in names]
+    rj = rank_average_desc(j_scores)
+    rf = rank_average_desc(p.tolist())
+    r_sum = rj + rf
     elim_mask = np.array([nm in elim_set for nm in names], dtype=bool)
     if not np.any(elim_mask) or np.all(elim_mask):
         return 0.0
-    elim_max = float(np.max(s_vals[elim_mask]))
-    safe_min = float(np.min(s_vals[~elim_mask]))
-    return float(max(0.0, elim_max - safe_min))
+    elim_scores = r_sum[elim_mask]
+    safe_scores = r_sum[~elim_mask]
+    diff = safe_scores[:, None] - elim_scores[None, :]
+    violations = diff[diff > 0]
+    if violations.size == 0:
+        return 0.0
+    viol_frac = float(violations.size / diff.size) if diff.size > 0 else 0.0
+    mean_v = float(np.mean(violations))
+    max_v = float(np.max(violations))
+    scale = max(1.0, 2.0 * len(names))
+    return float(((mean_v + 0.75 * max_v) * (1.0 + viol_frac)) / scale)
 
 
 # -----------------------------
@@ -459,18 +474,35 @@ def summarize_posterior(samples: np.ndarray,
     return p_mean, p_lo, p_hi, ent, p_map
 
 
-def compute_soft_weights(distances: Optional[np.ndarray], eps: float) -> Tuple[np.ndarray, float, float]:
-    """根据距离计算 soft ABC 权重与 ESS。"""
+def compute_soft_weights(distances: Optional[np.ndarray],
+                         eps: float,
+                         pred_match: Optional[np.ndarray] = None) -> Tuple[np.ndarray, float, float]:
+    """根据距离计算 soft ABC 权重与 ESS（eps 可基于 match 情况自适应）。"""
     if distances is None or len(distances) == 0:
         return np.array([], dtype=float), float("nan"), 0.0
     use_eps = float(eps)
     if (not np.isfinite(use_eps)) or use_eps <= 0:
-        med = float(np.median(distances))
-        if (not np.isfinite(med)) or med <= 0:
-            pos = distances[distances > 0]
-            med = float(np.median(pos)) if len(pos) > 0 else 1e-6
-        use_eps = max(med, 1e-6)
-    w = np.exp(-distances / use_eps)
+        pos = distances[distances > 0]
+        pos_scale = float(np.quantile(pos, 0.20)) if len(pos) > 0 else 1e-6
+        if (not np.isfinite(pos_scale)) or pos_scale <= 0:
+            pos_scale = 1e-6
+        if pred_match is not None and len(pred_match) == len(distances):
+            weights = 1.0 + 4.0 * pred_match.astype(float)
+            order = np.argsort(distances)
+            v = distances[order]
+            w = weights[order]
+            cdf = np.cumsum(w)
+            cutoff = 0.5 * cdf[-1]
+            idx = int(np.searchsorted(cdf, cutoff))
+            wm = float(v[min(idx, len(v) - 1)])
+            if (not np.isfinite(wm)) or wm <= 0:
+                wm = pos_scale
+            match_frac = float(np.mean(pred_match)) if len(pred_match) > 0 else 0.0
+            use_eps = max(wm * (1.0 - 0.85 * match_frac), 0.03 * pos_scale, 1e-6)
+            use_eps = min(use_eps, pos_scale)
+        else:
+            use_eps = max(pos_scale, 1e-6)
+    w = np.exp(-((distances / use_eps) ** 2))
     w_sum = float(np.sum(w))
     if (not np.isfinite(w_sum)) or w_sum <= 0:
         min_d = float(np.min(distances))
@@ -584,7 +616,7 @@ def main() -> None:
         accept_rate = accepted / draws if draws > 0 else 0.0
 
         # Soft ABC: 距离 -> 权重 -> posterior predictive consistency
-        weights, soft_eps, soft_ess = compute_soft_weights(distances, args.soft_eps)
+        weights, soft_eps, soft_ess = compute_soft_weights(distances, args.soft_eps, pred_match)
         pp_consistency, pp_consistency_se = compute_pp_consistency(pred_match, weights, soft_ess)
         feasible = 1 if (accepted > 0 or (np.isfinite(pp_consistency) and pp_consistency > 0.0)) else 0
 
