@@ -1,201 +1,167 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-分析敏感性分析结果，生成总结报告
+Analyze sensitivity grid and create paper-ready outputs.
+
+Outputs:
+- Table S1 (CSV + Markdown) with key metrics
+- Fig S1: kappa vs consistency_mean (lines by alpha0)
+- Fig S2: kappa vs rel_CI_width_median (lines by alpha0)
 """
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import os
+import argparse
+from pathlib import Path
+from typing import List
 
-def main():
-    # 读取敏感性分析汇总表
-    grid = pd.read_csv("sensitivity_grid.csv")
-    
-    print("=" * 80)
-    print("敏感性分析结果总结")
-    print("=" * 80)
-    
-    # 1. 一致性分析
-    print("\n【1. 一致性分析】")
-    print(f"所有参数组合的 consistency_map = {grid['overall_consistency_map'].unique()}")
-    print(f"consistency_mean 范围: {grid['overall_consistency_mean'].min():.4f} - {grid['overall_consistency_mean'].max():.4f}")
-    
-    # 找出有失配的参数组合
-    mismatch = grid[grid['overall_consistency_mean'] < 1.0]
-    if len(mismatch) > 0:
-        print(f"\n发现 {len(mismatch)} 组参数存在 consistency_mean < 1.0:")
-        for _, row in mismatch.iterrows():
-            print(f"  alpha0={row['alpha0']:.1f}, kappa={row['kappa']:.1f}: "
-                  f"consistency_mean={row['overall_consistency_mean']:.4f}, "
-                  f"Rank={row['consistency_mean_rank']:.4f}, "
-                  f"Percent={row['consistency_mean_percent']:.4f}")
-    
-    # 2. 接受率分析
-    print("\n【2. ABC接受率分析】")
-    print(f"平均接受率范围: {grid['accept_rate_mean'].min():.4f} - {grid['accept_rate_mean'].max():.4f}")
-    print(f"中位数接受率范围: {grid['accept_rate_median'].min():.4f} - {grid['accept_rate_median'].max():.4f}")
-    print(f"最小接受率范围: {grid['accept_rate_min'].min():.6f} - {grid['accept_rate_min'].max():.6f}")
-    
-    # 按alpha0和kappa分组分析
-    print("\n按 alpha0 分组:")
-    for alpha0 in sorted(grid['alpha0'].unique()):
-        subset = grid[grid['alpha0'] == alpha0]
-        print(f"  alpha0={alpha0:.1f}: 平均接受率={subset['accept_rate_mean'].mean():.4f} "
-              f"(范围: {subset['accept_rate_mean'].min():.4f}-{subset['accept_rate_mean'].max():.4f})")
-    
-    print("\n按 kappa 分组:")
-    for kappa in sorted(grid['kappa'].unique()):
-        subset = grid[grid['kappa'] == kappa]
-        print(f"  kappa={kappa:.1f}: 平均接受率={subset['accept_rate_mean'].mean():.4f} "
-              f"(范围: {subset['accept_rate_mean'].min():.4f}-{subset['accept_rate_mean'].max():.4f})")
-    
-    # 3. 不确定性分析（CI宽度）
-    print("\n【3. 不确定性分析（CI宽度）】")
-    print(f"平均CI宽度范围: {grid['ci_width_mean'].min():.4f} - {grid['ci_width_mean'].max():.4f}")
-    print(f"中位数CI宽度范围: {grid['ci_width_median'].min():.4f} - {grid['ci_width_median'].max():.4f}")
-    
-    print("\n按 kappa 对CI宽度的影响:")
-    for kappa in sorted(grid['kappa'].unique()):
-        subset = grid[grid['kappa'] == kappa]
-        print(f"  kappa={kappa:.1f}: 平均CI宽度={subset['ci_width_mean'].mean():.4f} "
-              f"(范围: {subset['ci_width_mean'].min():.4f}-{subset['ci_width_mean'].max():.4f})")
-    
-    # 4. 相对CI宽度分析
-    print("\n【4. 相对不确定性分析（相对CI宽度）】")
-    print(f"平均相对CI宽度范围: {grid['rel_ci_width_mean'].min():.4f} - {grid['rel_ci_width_mean'].max():.4f}")
-    print(f"中位数相对CI宽度范围: {grid['rel_ci_width_median'].min():.4f} - {grid['rel_ci_width_median'].max():.4f}")
-    
-    # 5. 淘汰边界稳健性（margin）
-    print("\n【5. 淘汰边界稳健性（margin_map）】")
-    print(f"中位数margin范围: {grid['margin_map_median'].min():.6f} - {grid['margin_map_median'].max():.6f}")
-    print(f"最小margin范围: {grid['margin_map_min'].min():.6f} - {grid['margin_map_min'].max():.6f}")
-    
-    # 6. 参数敏感性总结
-    print("\n【6. 参数敏感性总结】")
-    
-    # alpha0的影响
-    alpha0_effect = grid.groupby('alpha0').agg({
-        'overall_consistency_mean': 'mean',
-        'accept_rate_mean': 'mean',
-        'ci_width_mean': 'mean',
-        'rel_ci_width_mean': 'mean'
-    })
-    print("\nalpha0 的影响（平均值）:")
-    print(alpha0_effect.to_string())
-    
-    # kappa的影响
-    kappa_effect = grid.groupby('kappa').agg({
-        'overall_consistency_mean': 'mean',
-        'accept_rate_mean': 'mean',
-        'ci_width_mean': 'mean',
-        'rel_ci_width_mean': 'mean'
-    })
-    print("\nkappa 的影响（平均值）:")
-    print(kappa_effect.to_string())
-    
-    # 7. 最优参数推荐
-    print("\n【7. 参数选择建议】")
-    
-    # 综合考虑：一致性高、不确定性低、接受率合理
-    # 计算综合得分（一致性权重0.5，相对CI宽度权重0.3，接受率权重0.2）
-    grid['score'] = (
-        0.5 * grid['overall_consistency_mean'] +
-        0.3 * (1.0 / (1.0 + grid['rel_ci_width_mean'])) +  # 相对CI越小越好
-        0.2 * grid['accept_rate_mean']
-    )
-    
-    best = grid.loc[grid['score'].idxmax()]
-    print(f"\n综合最优参数组合:")
-    print(f"  alpha0 = {best['alpha0']:.1f}")
-    print(f"  kappa = {best['kappa']:.1f}")
-    print(f"  consistency_mean = {best['overall_consistency_mean']:.4f}")
-    print(f"  consistency_map = {best['overall_consistency_map']:.4f}")
-    print(f"  平均接受率 = {best['accept_rate_mean']:.4f}")
-    print(f"  平均CI宽度 = {best['ci_width_mean']:.4f}")
-    print(f"  平均相对CI宽度 = {best['rel_ci_width_mean']:.4f}")
-    
-    # 8. 可视化（如果可能）
-    print("\n【8. 生成可视化图表】")
-    out_dir = "图"
-    os.makedirs(out_dir, exist_ok=True)
-    
-    # 图1: alpha0 vs kappa 对一致性的影响
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-    
-    # 准备数据（pivot table）
-    pivot_cons = grid.pivot(index='alpha0', columns='kappa', values='overall_consistency_mean')
-    pivot_ci = grid.pivot(index='alpha0', columns='kappa', values='ci_width_mean')
-    pivot_rel_ci = grid.pivot(index='alpha0', columns='kappa', values='rel_ci_width_mean')
-    pivot_acc = grid.pivot(index='alpha0', columns='kappa', values='accept_rate_mean')
-    
-    # 子图1: 一致性
-    im1 = axes[0, 0].imshow(pivot_cons.values, aspect='auto', cmap='RdYlGn', vmin=0.99, vmax=1.0)
-    axes[0, 0].set_xticks(range(len(pivot_cons.columns)))
-    axes[0, 0].set_xticklabels([f"{k:.0f}" for k in pivot_cons.columns])
-    axes[0, 0].set_yticks(range(len(pivot_cons.index)))
-    axes[0, 0].set_yticklabels([f"{a:.0f}" for a in pivot_cons.index])
-    axes[0, 0].set_xlabel('kappa')
-    axes[0, 0].set_ylabel('alpha0')
-    axes[0, 0].set_title('Consistency (mean)')
-    plt.colorbar(im1, ax=axes[0, 0])
-    
-    # 子图2: CI宽度
-    im2 = axes[0, 1].imshow(pivot_ci.values, aspect='auto', cmap='YlOrRd')
-    axes[0, 1].set_xticks(range(len(pivot_ci.columns)))
-    axes[0, 1].set_xticklabels([f"{k:.0f}" for k in pivot_ci.columns])
-    axes[0, 1].set_yticks(range(len(pivot_ci.index)))
-    axes[0, 1].set_yticklabels([f"{a:.0f}" for a in pivot_ci.index])
-    axes[0, 1].set_xlabel('kappa')
-    axes[0, 1].set_ylabel('alpha0')
-    axes[0, 1].set_title('Mean CI Width')
-    plt.colorbar(im2, ax=axes[0, 1])
-    
-    # 子图3: 相对CI宽度
-    im3 = axes[1, 0].imshow(pivot_rel_ci.values, aspect='auto', cmap='YlOrRd')
-    axes[1, 0].set_xticks(range(len(pivot_rel_ci.columns)))
-    axes[1, 0].set_xticklabels([f"{k:.0f}" for k in pivot_rel_ci.columns])
-    axes[1, 0].set_yticks(range(len(pivot_rel_ci.index)))
-    axes[1, 0].set_yticklabels([f"{a:.0f}" for a in pivot_rel_ci.index])
-    axes[1, 0].set_xlabel('kappa')
-    axes[1, 0].set_ylabel('alpha0')
-    axes[1, 0].set_title('Mean Relative CI Width')
-    plt.colorbar(im3, ax=axes[1, 0])
-    
-    # 子图4: 接受率
-    im4 = axes[1, 1].imshow(pivot_acc.values, aspect='auto', cmap='viridis')
-    axes[1, 1].set_xticks(range(len(pivot_acc.columns)))
-    axes[1, 1].set_xticklabels([f"{k:.0f}" for k in pivot_acc.columns])
-    axes[1, 1].set_yticks(range(len(pivot_acc.index)))
-    axes[1, 1].set_yticklabels([f"{a:.0f}" for a in pivot_acc.index])
-    axes[1, 1].set_xlabel('kappa')
-    axes[1, 1].set_ylabel('alpha0')
-    axes[1, 1].set_title('Mean Accept Rate')
-    plt.colorbar(im4, ax=axes[1, 1])
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(out_dir, "sensitivity_heatmap.png"), dpi=300)
-    print(f"  已保存: {out_dir}/sensitivity_heatmap.png")
-    
-    # 图2: kappa对CI宽度的影响（线图）
-    fig, ax = plt.subplots(figsize=(10, 6))
-    for alpha0 in sorted(grid['alpha0'].unique()):
-        subset = grid[grid['alpha0'] == alpha0].sort_values('kappa')
-        ax.plot(subset['kappa'], subset['ci_width_mean'], marker='o', label=f'alpha0={alpha0:.1f}')
-    ax.set_xlabel('kappa')
-    ax.set_ylabel('Mean CI Width')
-    ax.set_title('Effect of kappa on uncertainty (CI width)')
-    ax.legend()
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Analyze sensitivity grid and create Table S1/Fig S1/Fig S2.")
+    parser.add_argument("--grid", type=str, default="sensitivity_grid.csv",
+                        help="Path to sensitivity_grid.csv")
+    parser.add_argument("--out_dir", type=str, default="sensitivity_outputs",
+                        help="Output directory for tables/figures")
+    parser.add_argument("--dpi", type=int, default=300, help="Figure DPI")
+    return parser.parse_args()
+
+
+def resolve_grid(path_str: str) -> Path:
+    path = Path(path_str)
+    if path.exists():
+        return path
+    script_dir = Path(__file__).resolve().parent
+    alt = script_dir / path_str
+    if alt.exists():
+        return alt
+    raise FileNotFoundError(f"Grid file not found: {path_str}")
+
+
+def ensure_column(df: pd.DataFrame, target: str, fallbacks: List[str]) -> None:
+    if target in df.columns:
+        return
+    for col in fallbacks:
+        if col in df.columns:
+            df[target] = df[col]
+            return
+    raise KeyError(f"Missing required column: {target} (fallbacks tried: {fallbacks})")
+
+
+def prepare_grid(grid: pd.DataFrame) -> pd.DataFrame:
+    out = grid.copy()
+
+    # Keep only successful runs when status is available.
+    if "status" in out.columns:
+        out = out[out["status"] == "ok"].copy()
+
+    # Canonical columns with fallbacks for older grids.
+    ensure_column(out, "consistency_map", ["overall_consistency_map"])
+    ensure_column(out, "consistency_mean", ["overall_consistency_mean"])
+    ensure_column(out, "accept_rate_median", [])
+    ensure_column(out, "rel_CI_width_median", ["rel_ci_width_median"])
+    ensure_column(out, "margin_median", ["margin_map_median"])
+
+    # Coerce to numeric (safe for plotting and sorting).
+    for col in ["alpha0", "kappa", "consistency_map", "consistency_mean",
+                "accept_rate_median", "rel_CI_width_median", "margin_median"]:
+        out[col] = pd.to_numeric(out[col], errors="coerce")
+
+    out = out.sort_values(["alpha0", "kappa"]).reset_index(drop=True)
+    return out
+
+
+def dataframe_to_markdown(df: pd.DataFrame) -> str:
+    headers = list(df.columns)
+    header_line = "| " + " | ".join(headers) + " |"
+    sep_line = "| " + " | ".join(["---"] * len(headers)) + " |"
+    lines = [header_line, sep_line]
+    for _, row in df.iterrows():
+        values = [str(row[col]) for col in headers]
+        lines.append("| " + " | ".join(values) + " |")
+    return "\n".join(lines)
+
+
+def write_table_s1(grid: pd.DataFrame, out_dir: Path) -> None:
+    cols = [
+        "alpha0",
+        "kappa",
+        "consistency_map",
+        "consistency_mean",
+        "accept_rate_median",
+        "rel_CI_width_median",
+        "margin_median",
+    ]
+    table = grid[cols].copy()
+
+    out_csv = out_dir / "table_S1.csv"
+    table.to_csv(out_csv, index=False, encoding="utf-8")
+
+    # Markdown version with rounding for easy paper pasting.
+    md_table = table.copy()
+    md_table["alpha0"] = md_table["alpha0"].map(lambda x: f"{x:.0f}")
+    md_table["kappa"] = md_table["kappa"].map(lambda x: f"{x:.0f}")
+    for col in [
+        "consistency_map",
+        "consistency_mean",
+        "accept_rate_median",
+        "rel_CI_width_median",
+        "margin_median",
+    ]:
+        md_table[col] = md_table[col].map(lambda x: f"{x:.4f}" if pd.notna(x) else "")
+
+    out_md = out_dir / "table_S1.md"
+    out_md.write_text(dataframe_to_markdown(md_table), encoding="utf-8")
+
+
+def plot_lines(grid: pd.DataFrame, y_col: str, ylabel: str, title: str, out_path: Path, dpi: int) -> None:
+    fig, ax = plt.subplots(figsize=(6.5, 4.2))
+    for alpha0 in sorted(grid["alpha0"].dropna().unique()):
+        subset = grid[grid["alpha0"] == alpha0].sort_values("kappa")
+        ax.plot(subset["kappa"], subset[y_col], marker="o", label=f"alpha0={alpha0:.0f}")
+
+    ax.set_xlabel("kappa")
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
     ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(os.path.join(out_dir, "sensitivity_kappa_vs_ci.png"), dpi=300)
-    print(f"  已保存: {out_dir}/sensitivity_kappa_vs_ci.png")
-    
-    print("\n" + "=" * 80)
-    print("分析完成！")
-    print("=" * 80)
+    ax.legend(title="alpha0", frameon=False)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=dpi)
+    plt.close(fig)
+
+
+def main() -> None:
+    args = parse_args()
+    grid_path = resolve_grid(args.grid)
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    grid = pd.read_csv(grid_path)
+    grid = prepare_grid(grid)
+
+    write_table_s1(grid, out_dir)
+
+    plot_lines(
+        grid=grid,
+        y_col="consistency_mean",
+        ylabel="Consistency (mean)",
+        title="Fig S1: Consistency vs kappa",
+        out_path=out_dir / "fig_S1_consistency_vs_kappa.png",
+        dpi=args.dpi,
+    )
+
+    plot_lines(
+        grid=grid,
+        y_col="rel_CI_width_median",
+        ylabel="Median Relative CI Width",
+        title="Fig S2: Relative CI Width vs kappa",
+        out_path=out_dir / "fig_S2_rel_ci_vs_kappa.png",
+        dpi=args.dpi,
+    )
+
+    print("[OK] Wrote Table S1 and Fig S1/Fig S2 outputs to:")
+    print(f"  {out_dir}")
+
 
 if __name__ == "__main__":
     main()
-

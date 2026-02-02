@@ -260,6 +260,17 @@ def main():
             metrics = summarize_run(week_dst, fan_dst)
             row = {"alpha0": a, "kappa": k, "returncode": 0, "status": "ok"}
             row.update(metrics)
+            row.update({
+                "consistency_map": metrics.get("overall_consistency_map"),
+                "consistency_mean": metrics.get("overall_consistency_mean"),
+                "accept_rate_median": metrics.get("accept_rate_median"),
+                "CI_width_mean": metrics.get("ci_width_mean"),
+                "CI_width_median": metrics.get("ci_width_median"),
+                "rel_CI_width_mean": metrics.get("rel_ci_width_mean"),
+                "rel_CI_width_median": metrics.get("rel_ci_width_median"),
+                "margin_median": metrics.get("margin_map_median"),
+                "margin_min": metrics.get("margin_map_min"),
+            })
             grid_rows.append(row)
 
             print(f"[OK] consistency_map={metrics['overall_consistency_map']:.4f}, "
