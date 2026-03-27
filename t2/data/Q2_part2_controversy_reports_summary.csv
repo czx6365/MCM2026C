@@ -1,0 +1,5 @@
+﻿tag,season,week,true_k,true_eliminated,focus_celebrity,focus_abs_gap,A_default_method,A_elim,B_elim_rank,C_elim_percent,A_exact,B_exact,C_exact,flip_A,flip_A_judges_save,flip_rank,flip_rank_judges_save,flip_percent,flip_percent_judges_save
+example,2,5,0,[],Jerry Rice,3.0,rank,[],[],[],1,1,1,,,,,,
+example,4,6,0,[],Billy Ray Cyrus,4.0,percent,[],[],[],1,1,1,,,,,,
+example,11,3,0,[],Bristol Palin,7.0,percent,[],[],[],1,1,1,,,,,,
+example,27,4,0,[],Bobby Bones,8.0,percent,[],[],[],1,1,1,,,,,,

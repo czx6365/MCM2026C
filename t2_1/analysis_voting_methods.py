@@ -29,6 +29,14 @@ def select_bottom(df: pd.DataFrame, value_col: str, n: int, lower_is_worse: bool
     return ordered.head(n)["celebrity_name"].tolist()
 
 
+def same_elim_set(a, b) -> bool:
+    if not isinstance(a, str) or not isinstance(b, str):
+        return False
+    if (not a) and (not b):
+        return True
+    return set(a.split("|")) == set(b.split("|"))
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_input", default="data/process/model_input.csv")
@@ -148,7 +156,10 @@ def main():
 
     # Summary: differences between rank and percent
     if not weekly.empty:
-        weekly["methods_differ"] = weekly["rank_eliminated"] != weekly["percent_eliminated"]
+        weekly["methods_differ"] = ~weekly.apply(
+            lambda r: same_elim_set(r["rank_eliminated"], r["percent_eliminated"]),
+            axis=1
+        )
         season_summary = (
             weekly.groupby("season", as_index=False)
             .agg(weeks_with_elim=("week", "count"),

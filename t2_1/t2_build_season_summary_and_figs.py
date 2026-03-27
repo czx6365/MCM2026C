@@ -82,6 +82,18 @@ def _coerce_int_season_week(df: pd.DataFrame, df_name: str):
     return df
 
 
+def _same_elim_set(a, b) -> bool:
+    """
+    判断两个淘汰字符串是否代表同一组选手（忽略顺序）。
+    例如："A|B" 与 "B|A" -> True
+    """
+    if not isinstance(a, str) or not isinstance(b, str):
+        return False
+    set_a = {x for x in a.split("|") if x}
+    set_b = {x for x in b.split("|") if x}
+    return set_a == set_b
+
+
 # -----------------------------
 # 1) Season-level 主表
 # -----------------------------
@@ -419,7 +431,10 @@ def compute_week_features(weekly_contestant: pd.DataFrame,
 
     if "methods_differ" not in wcmp.columns:
         _ensure_columns(wcmp, ["rank_eliminated", "percent_eliminated"], "weekly_method_comparison")
-        wcmp["methods_differ"] = (wcmp["rank_eliminated"].astype(str) != wcmp["percent_eliminated"].astype(str))
+        wcmp["methods_differ"] = ~wcmp.apply(
+            lambda r: _same_elim_set(r["rank_eliminated"], r["percent_eliminated"]),
+            axis=1
+        )
 
     wcmp["methods_differ"] = _to_bool(wcmp["methods_differ"])
     wcmp = wcmp[["season", "week", "methods_differ"]].copy()
