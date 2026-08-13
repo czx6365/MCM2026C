@@ -56,10 +56,10 @@ Contestants with the smallest combined scores are eliminated.
 
 ### Rank rule
 
-Judge scores and fan votes are separately ranked:
+Judge scores and fan votes are separately ranked. Let $r_J(i)$ denote judge rank and $r_F(i)$ denote fan-vote rank:
 
 ```math
-R_i = \operatorname{rank}(J_i) + \operatorname{rank}(p_i)
+R_i = r_J(i) + r_F(i)
 ```
 
 Contestants with the largest rank sums are eliminated.
@@ -68,10 +68,10 @@ This simulator converts any candidate fan-vote vector into a predicted eliminati
 
 ## Model 2: Dynamic Dirichlet Prior
 
-We model the weekly fan-vote vector with a Dirichlet distribution. For the first modeled week of a season, a symmetric prior is used. For later weeks, the previous week's inferred vote shares provide a dynamic prior:
+We model the weekly fan-vote vector with a Dirichlet distribution. For the first modeled week of a season, a symmetric prior is used. For later weeks, the previous week's inferred vote shares provide a dynamic prior. Using $D(\alpha_t)$ to denote a Dirichlet distribution with concentration vector $\alpha_t$:
 
 ```math
-\mathbf{p}_t \sim \operatorname{Dirichlet}(\boldsymbol{\alpha}_t)
+p_t \sim D(\alpha_t)
 ```
 
 The concentration parameter controls how strongly fan popularity is assumed to persist from one week to the next. This gives the inference process temporal continuity without forcing fan preferences to remain fixed.
@@ -103,7 +103,7 @@ For the Percent rule, the distance measures how strongly an eliminated contestan
 A Gaussian-style kernel converts the distance into a weight:
 
 ```math
-w \propto \exp\!\left[-\left(\frac{d}{\epsilon}\right)^2\right]
+w \propto \exp\left[-\left(\frac{d}{\epsilon}\right)^2\right]
 ```
 
 This is used to evaluate posterior-predictive consistency and quantify how strongly the inferred fan distribution supports the observed outcome.
@@ -144,10 +144,10 @@ Here the magnitude of support is retained: a contestant with substantially more 
 
 For every elimination week we compute both counterfactual elimination sets and identify **disagreement weeks** where Rank and Percent would eliminate different contestants.
 
-To measure which method is more aligned with fan preferences, we compare the inferred fan-vote share of the contestants eliminated by each method:
+Let $\bar p_R$ be the mean inferred fan share of contestants eliminated by Rank, and $\bar p_P$ the corresponding quantity for Percent. We compare:
 
 ```math
-\Delta_F = \overline{p}_{\mathrm{Rank\;elim}} - \overline{p}_{\mathrm{Percent\;elim}}
+\Delta_F = \bar p_R - \bar p_P
 ```
 
 A positive value means Percent eliminates contestants with lower fan support and therefore preserves the more popular contestants.
@@ -162,10 +162,10 @@ This suggests that Percent aggregation matters most near close decision boundari
 
 We then study controversial contestants including Jerry Rice, Billy Ray Cyrus, Bristol Palin, and Bobby Bones.
 
-Fan-vote uncertainty from Q1 is propagated through the simulation instead of using only one point estimate. For each contestant-week, fan support is sampled from a triangular approximation based on the Q1 interval:
+Fan-vote uncertainty from Q1 is propagated through the simulation instead of using only one point estimate. Let $T(p_L,p_M,p_U)$ denote a triangular distribution with lower bound, mode, and upper bound from the Q1 interval:
 
 ```math
-p_i^{(m)} \sim \operatorname{Triangular}\!\left(p_{\mathrm{lo}}, p_{\mathrm{mode}}, p_{\mathrm{hi}}\right)
+p_i^{(m)} \sim T(p_L,p_M,p_U)
 ```
 
 Each simulated season is replayed under four scenarios:
@@ -199,20 +199,22 @@ The main explanatory variables include professional dancer, celebrity age, indus
 
 ## Model 1: Judge-Score Regression
 
-For active contestants, standardized judge scores are modeled using OLS:
+For active contestants, standardized judge scores are modeled using OLS. Using compact notation for season, week, age, industry, country, and professional-dancer effects:
 
 ```math
-Y_{\mathrm{judge}} = \beta_0 + \beta_{\mathrm{season}} + \beta_{\mathrm{week}} + \beta_{\mathrm{age}} + \beta_{\mathrm{industry}} + \beta_{\mathrm{country}} + \beta_{\mathrm{pro}} + \varepsilon
+Y_J = \beta_0 + \beta_S + \beta_W + \beta_A + \beta_I + \beta_C + \beta_P + \varepsilon
 ```
 
 Professional dancers enter as fixed effects. Standard errors are clustered by contestant-season pair to account for repeated weekly observations from the same partnership.
 
 ## Model 2: Uncertainty-Weighted Fan Regression
 
-Fan-vote shares are first mapped to logit space and standardized. Because Q1 estimates have different uncertainty levels, the fan model uses **Weighted Least Squares (WLS)** with approximately inverse-variance weights:
+Fan-vote shares are first mapped to logit space and standardized. Because Q1 estimates have different uncertainty levels, the fan model uses **Weighted Least Squares (WLS)** with approximately inverse-variance weights.
+
+Let $c_{i,t}$ denote the confidence-interval width of the inferred fan vote for contestant $i$ in week $t$. Then:
 
 ```math
-w_{i,t} \propto \frac{1}{\operatorname{CIWidth}_{i,t}^{2}}
+w_{i,t} \propto c_{i,t}^{-2}
 ```
 
 Thus, highly uncertain fan-vote estimates contribute less to coefficient estimation. The same explanatory variables are used as in the judge model, again with pair-level cluster-robust standard errors.
@@ -226,21 +228,15 @@ To measure the contribution of professional dancers, we compare nested models wi
 
 Professional dancers therefore explain substantially more additional variation in fan response than in judge response.
 
-The estimated professional-dancer effects on judges and fans are also almost uncorrelated:
+The estimated professional-dancer effects on judges and fans are also almost uncorrelated. Let $\rho$ denote the correlation coefficient:
 
 ```math
-\operatorname{corr}\!\left(\widehat{\beta}_{\mathrm{pro}}^{\mathrm{judge}},\widehat{\beta}_{\mathrm{pro}}^{\mathrm{fan}}\right) \approx 0.0328
+\rho\left(\widehat{\beta}_P^{(J)},\widehat{\beta}_P^{(F)}\right) \approx 0.0328
 ```
 
 ## Model 4: How Far Does a Contestant Survive?
 
-At the contestant-season level, the response variable is
-
-```math
-Y_{\mathrm{survival}} = \text{weeks survived}
-```
-
-and the model uses mean judge performance, mean inferred fan support, celebrity characteristics, and professional-dancer effects.
+At the contestant-season level, the response variable is `weeks_survived`. The model uses mean judge performance, mean inferred fan support, celebrity characteristics, and professional-dancer effects.
 
 Nested models are compared through incremental $R^2$ to distinguish the contribution of performance, celebrity traits, and professional partners to competition longevity.
 
