@@ -1,184 +1,440 @@
-# MCM 2026 Problem C: DWTS 投票与淘汰机制分析.  M奖
+# MCM 2026 Problem C — Modeling Voting and Elimination in *Dancing with the Stars*
 
-本项目围绕《Dancing with the Stars》历史赛季数据，构建了一套从评委分数和淘汰结果反推粉丝投票、比较不同淘汰规则、分析争议案例与角色效应、并设计改进淘汰方法的完整研究流程。代码和结果按题目拆分为 `t1` 到 `t4` 四个主模块，适合直接用于论文写作、结果复核和后续扩展。
+**2026 Mathematical Contest in Modeling (MCM) — Meritorious Winner**
 
-## 项目回答的问题
+This project studies how judging scores, hidden fan preferences, voting rules, professional dancers, celebrity characteristics, and elimination design interact in *Dancing with the Stars* (DWTS). The analysis is organized around the four questions of MCM 2026 Problem C.
 
-- `Q1 / t1`：在粉丝投票不公开的情况下，如何反推每周每位选手的 `fan vote share`，并量化不确定性？
-- `Q2 / t2_1 + t2_2`：`Rank` 合并法和 `Percent` 合并法有何差异？哪一种更贴近粉丝偏好？`Judges Save` 会带来什么影响？
-- `Q3 / t3`：职业舞者和明星特征对评委评分与粉丝投票的影响是否一致？谁更决定“能走多远”？
-- `Q4 / t4`：如果重新设计淘汰方法，哪种方法在整体预测和极端分歧周里表现更好？
+Rather than treating the competition as a simple prediction task, we modeled it as a sequence of **inverse inference, counterfactual simulation, statistical effect estimation, and mechanism design** problems.
 
-## 数据范围
+## Research Overview
 
-- 原始数据：[`data/2026_MCM_Problem_C_Data.csv`](data/2026_MCM_Problem_C_Data.csv)
-- 覆盖赛季：34 个赛季
-- 处理后的 season-specific `pair_id`：421 个
-- 唯一明星数：408 个
-- 预处理后 `season-week-pair` 记录：4199 条
-- 识别出的淘汰事件：303 次
-- 预处理阶段剔除的无效 `season-week` 块：39 个
-
-## 核心结论
-
-- `Q1`：基于 `ABC + Soft ABC + 动态 Dirichlet 先验` 的反推模型在 301 个评估周上的平均 `pp_consistency` 为 `0.6248`，`p_map` 的可行性一致率为 `1.0000`，`p_mean` 一致率为 `0.9967`。`Rank` 赛制下的不确定性高于 `Percent` 赛制。
-- `Q1`：敏感性分析表明，`alpha0` 和 `kappa` 的不同组合不会改变“模型可行”这一结论；更大的 `kappa` 能显著缩小相对置信区间。
-- `Q2`：`Rank` 与 `Percent` 在部分周次会给出不同淘汰结果；在基于 `fan_share` 重新筛出的 17 个真正“翻盘周”中，`Percent` 方法 100% 淘汰了粉丝票份额更低的选手，说明它在竞争激烈、边际很小的场景下更直接反映粉丝偏好幅度。
-- `Q2`：争议案例的反事实模拟表明，`Judges Save` 会系统性削弱部分高人气争议选手的优势，尤其对 `Jerry Rice`、`Bristol Palin`、`Bobby Bones` 这类案例更明显。
-- `Q3`：评委模型 `R^2 = 0.6553`，粉丝模型 `R^2 = 0.4843`；职业舞者对粉丝投票的增量解释力 (`0.0445`) 明显高于对评委评分的增量解释力 (`0.0179`)。两侧舞者效应相关系数仅 `0.0328`，几乎不一致。
-- `Q4`：在 188 个有淘汰的周中，`Percent` 方法整体匹配率最高 (`76.60%`)；在 67 个极端分歧周中，`Uncertainty+Geometric` 的极端命中率最高 (`20.90%`)。
-
-## 目录结构
-
-- [`data/`](data)：原始数据、预处理脚本与中间表。
-- [`t1/`](t1)：Q1 反推粉丝投票份额，含主结果、全局指标与敏感性分析。
-- [`t2_1/`](t2_1)：Q2.1 `Rank` vs `Percent` 的跨季比较、机制检验与图表。
-- [`t2_2/`](t2_2)：Q2.2 争议选手反事实模拟与案例图。
-- [`t3/`](t3)：Q3 职业舞者与明星特征对评委/粉丝影响的回归分析。
-- [`t4/`](t4)：Q4 重放模拟与淘汰方法对比。
-- [`t2/`](t2)：较早的 notebook 版本与中间导出，可视为实验草稿区。
-- [`人气/`](人气)：基于 Wikipedia pageviews 的外部人气代理变量采集脚本。
-
-## 主要输出文件
-
-- `data/process/model_input.csv`：后续模块统一使用的周级建模输入表。
-- `t1/fan_vote_estimates.csv`：每位选手每周的 `p_mean / p_map / CI` 等估计结果。
-- `t1/weekly_summary.csv`：Q1 的周级一致性、不确定性与采样状态汇总。
-- `t2_1/out_question/weekly_method_comparison.csv`：`Rank` 与 `Percent` 的逐周淘汰对比。
-- `t2_1/fan_share_favor_summary.csv`：基于 `fan_share` 的“偏粉丝”稳健性结论。
-- `t2_2/controversy_counterfactual_summary.csv`：争议案例的 Monte Carlo 反事实汇总。
-- `t3/outputs/coef_compare_all.csv`：评委侧与粉丝侧系数对比。
-- `t3/outputs/performance_weeks_model.csv`：`weeks_survived` 模型及增量 `R^2`。
-- `t4/outputs/q4_method_summary.csv`：四种淘汰方法的总对比表。
-
-## 环境依赖
-
-建议使用 Python 3.11+ 或 3.12。核心依赖如下：
-
-```bash
-pip install numpy pandas matplotlib statsmodels scipy requests jupyter
+```text
+Historical judge scores + observed eliminations
+                    ↓
+Q1  Infer latent fan-vote shares and uncertainty
+                    ↓
+Q2  Replay alternative voting rules and Judges Save
+                    ↓
+Q3  Estimate effects of professional dancers and celebrity traits
+                    ↓
+Q4  Design and compare alternative elimination mechanisms
 ```
 
-可选依赖：
+The dataset covers 34 seasons of DWTS. After preprocessing, the main modeling table contains season-week-contestant observations, observed judge scores, active-roster information, and elimination events.
 
-```bash
-pip install scienceplots
+---
+
+# Q1 — Inferring Hidden Fan Votes
+
+## Problem
+
+Fan votes are not publicly released. We therefore need to infer a weekly fan-vote distribution that is consistent with the observed judge scores, the historical voting rule, and the contestants who were actually eliminated.
+
+For contestant $i$ in week $t$, let
+
+$$
+p_{i,t} \ge 0, \qquad \sum_i p_{i,t}=1
+$$
+
+be the unknown fan-vote share.
+
+The key difficulty is that the data provide an **elimination outcome**, not a direct numerical fan-vote label. This makes Q1 an inverse problem with a large set of possible latent vote distributions.
+
+## Model 1: Historical Voting-Rule Simulator
+
+For each season-week, the inferred fan shares are passed through the corresponding historical elimination mechanism.
+
+### Percent rule
+
+Judge scores and fan votes are converted to shares:
+
+$$
+C_i = \frac{J_i}{\sum_j J_j}+p_i,
+$$
+
+and contestants with the smallest combined scores are eliminated.
+
+### Rank rule
+
+Judge scores and fan votes are separately ranked:
+
+$$
+R_i = \operatorname{rank}(J_i)+\operatorname{rank}(p_i),
+$$
+
+and contestants with the largest rank sums are eliminated.
+
+This simulator converts any candidate fan-vote vector into a predicted elimination set.
+
+## Model 2: Dynamic Dirichlet Prior
+
+We model the weekly fan-vote vector with a Dirichlet distribution.
+
+For the first modeled week of a season, a symmetric prior is used. For later weeks, the previous week's inferred vote shares provide a dynamic prior:
+
+$$
+p_t \sim \operatorname{Dirichlet}(\alpha_t).
+$$
+
+The concentration parameter controls how strongly fan popularity is assumed to persist from one week to the next.
+
+This gives the inference process temporal continuity without forcing fan preferences to remain fixed.
+
+## Model 3: Hard Approximate Bayesian Computation (ABC)
+
+Because the elimination rule is discrete and non-differentiable, we use **ABC rejection sampling** rather than a closed-form likelihood.
+
+For each candidate draw:
+
+```text
+sample fan-vote vector from Dirichlet prior
+        ↓
+apply historical Rank / Percent rule
+        ↓
+compare predicted elimination with observed elimination
+        ↓
+accept only if the elimination set matches exactly
 ```
 
-## 推荐运行顺序
+Accepted samples form an approximate posterior over weekly fan-vote shares.
 
-### 1. 预处理原始数据
+From these samples we compute:
 
-```bash
-python data/preprocess_dwts.py
+- posterior mean `p_mean`;
+- a 90% uncertainty interval;
+- posterior entropy;
+- an accepted-sample MAP estimate `p_map`.
+
+`p_map` is selected from the accepted region, so it remains consistent with the observed elimination constraint.
+
+## Model 4: Soft ABC and Posterior-Predictive Consistency
+
+Exact rejection can be inefficient when the feasible region is narrow. We therefore also define a **soft distance** between predicted and observed elimination structures.
+
+For the Percent rule, the distance measures how strongly an eliminated contestant outranks a survivor in combined percentage score. For the Rank rule, an analogous rank-gap violation is used.
+
+A Gaussian-style kernel converts the distance into a weight:
+
+$$
+w \propto \exp\left[-\left(\frac{d}{\epsilon}\right)^2\right].
+$$
+
+This is used to evaluate posterior-predictive consistency and to quantify how strongly the inferred fan distribution supports the observed outcome.
+
+## Robustness and Sensitivity
+
+The Q1 pipeline also varies the Dirichlet initialization and temporal-smoothing strength. The main conclusion is stable across tested settings: feasible fan-vote distributions can be recovered, while stronger temporal concentration narrows uncertainty intervals.
+
+### Main insight
+
+Q1 produces a **distribution over plausible fan preferences**, rather than pretending that a single hidden vote vector can be uniquely recovered from elimination data.
+
+---
+
+# Q2 — Comparing Voting Rules and Judges Save
+
+Q2 uses the inferred fan-vote distributions from Q1 to study whether different voting mechanisms systematically favor judges or fans.
+
+## Q2.1 — Rank vs. Percent
+
+Two counterfactual elimination rules are replayed on the same season-week data.
+
+### Rank aggregation
+
+$$
+R_i = r_i^{(J)} + r_i^{(F)}.
+$$
+
+Only ordering information is preserved. A large difference in fan support may collapse to a one-rank difference.
+
+### Percent aggregation
+
+$$
+C_i = s_i^{(J)} + s_i^{(F)}.
+$$
+
+Here the magnitude of support is retained: a contestant with substantially more fan support receives a proportionally larger advantage.
+
+## Comparison Strategy
+
+For every elimination week we compute both counterfactual elimination sets and identify **disagreement weeks** where Rank and Percent would eliminate different contestants.
+
+To measure which method is more aligned with fan preferences, we compare the inferred fan-vote share of the contestants eliminated by each method:
+
+$$
+\Delta_F = \overline{p}_{\text{Rank elim}}-\overline{p}_{\text{Percent elim}}.
+$$
+
+A positive value means Percent eliminates contestants with lower fan support and therefore preserves the more popular contestants.
+
+### Key finding
+
+Across all comparable weeks the difference is modest, because both rules usually eliminate the same contestant. However, among the **17 weeks where the methods disagree**, Percent eliminates the lower-fan-share contestant in **100% of cases**.
+
+This suggests that Percent aggregation matters most near close decision boundaries because it preserves the magnitude of fan preference rather than only its rank.
+
+## Q2.2 — Monte Carlo Counterfactual Replay
+
+We then study controversial contestants:
+
+- Jerry Rice;
+- Billy Ray Cyrus;
+- Bristol Palin;
+- Bobby Bones.
+
+Fan-vote uncertainty from Q1 is propagated through the simulation instead of using only one point estimate.
+
+For each contestant-week, fan support is sampled from a triangular approximation based on the Q1 interval:
+
+$$
+p_i^{(m)} \sim \operatorname{Triangular}(p_{lo}, p_{mode}, p_{hi}).
+$$
+
+Each simulated season is replayed under four scenarios:
+
+```text
+Percent
+Rank
+Percent + Judges Save
+Rank + Judges Save
 ```
 
-输出到 `data/process/`，生成：
+The historical number of eliminations in each week is preserved. Repeating the replay produces a distribution over final placements rather than a single deterministic counterfactual.
 
-- `judges_scores_long.csv`
-- `judges_totals.csv`
-- `active_roster.csv`
-- `elimination_events.csv`
-- `model_input.csv`
-- `preprocess_report.json`
+## Judges Save Model
 
-### 2. 运行 Q1：反推粉丝投票份额
+When Judges Save is active, the combined rule determines the bottom two and the judges determine which contestant leaves. The deterministic version eliminates the bottom-two contestant with the lower judge score; the implementation also supports a probabilistic logistic alternative.
 
-从 `t1` 目录运行，避免结果写到仓库根目录：
+### Main insight
 
-```bash
-cd t1
-python estimate_fan_votes.py --data_path ../data/2026_MCM_Problem_C_Data.csv
-cd ..
-```
+The counterfactual distributions show that voting-system design can materially change controversial outcomes. Judges Save tends to reduce the advantage of contestants whose survival is driven primarily by strong fan support despite relatively weak judge scores.
 
-主要输出：
+---
 
-- `t1/fan_vote_estimates.csv`
-- `t1/weekly_summary.csv`
-- `t1/global_metrics.json`
+# Q3 — Professional Dancers, Celebrity Traits, and Competition Performance
 
-敏感性分析结果已随仓库附带在 `t1/sensitivity_runs/` 与 `t1/sensitivity_runs/sensitivity_outputs/` 中；若要重新生成，建议先检查 `run_sensitivity.py` 与当前 `estimate_fan_votes.py` 的参数接口是否一致，再批量运行。
+## Problem
 
-### 3. 运行 Q2.1：比较 Rank 与 Percent
+A contestant can be popular with fans but weak with judges, or vice versa. We therefore estimate the two mechanisms separately instead of fitting one pooled outcome model.
 
-```bash
-python t2_1/analysis_voting_methods.py --model_input data/process/model_input.csv --elims data/process/elimination_events.csv --fan t1/fan_vote_estimates.csv --p-col p_mean --out-dir t2_1/out_question
-python t2_1/fan_share_favor_analysis.py --weekly-compare t2_1/out_question/weekly_method_comparison.csv --weekly-contestant t2_1/out_question/weekly_contestant_metrics.csv --out-dir t2_1
-python t2_1/t2_build_season_summary_and_figs.py --diff-summary t2_1/out_question/season_method_diff_summary.csv --week-completeness t2_1/out_question/week_data_completeness.csv --elim-metrics t2_1/out_question/elim_rank_metrics.csv --weekly-compare t2_1/out_question/weekly_method_comparison.csv --weekly-contestant t2_1/out_question/weekly_contestant_metrics.csv --out-dir t2_1/out_question --plot-judge-delta
-```
+The main explanatory variables include:
 
-### 4. 运行 Q2.2：争议案例反事实模拟
+- professional dancer;
+- celebrity age;
+- industry;
+- home country/region;
+- season effects;
+- week effects.
 
-```bash
-python t2_2/2.2.py --outdir t2_2
-```
+## Model 1: Judge-Score Regression
 
-### 5. 运行 Q3：职业舞者与明星特征影响分析
+For active contestants, standardized judge scores are modeled using OLS:
 
-```bash
-python t3/t3.py
-```
+$$
+Y_{judge} =
+\beta_0
++ \beta_{season}
++ \beta_{week}
++ \beta_{age}
++ \beta_{industry}
++ \beta_{country}
++ \beta_{pro}
++ \epsilon.
+$$
 
-输出到 `t3/outputs/`。
+Professional dancers enter as fixed effects. Standard errors are clustered by contestant-season pair to account for repeated weekly observations from the same partnership.
 
-### 6. 运行 Q4：重放模拟与淘汰方法设计
+## Model 2: Uncertainty-Weighted Fan Regression
 
-```bash
-python t4/t4.py --root . --data-dir t4/data --out-dir t4/outputs
-```
+Fan-vote shares are first mapped to logit space and standardized.
 
-说明：
+Because Q1 estimates have different uncertainty levels, the fan model uses **Weighted Least Squares (WLS)** with approximately inverse-variance weights:
 
-- 该步骤会先构造 Q4 所需输入，再执行 replay analysis。
-- 依赖 `t1/` 与 `t2_1/` 的已有结果文件。
+$$
+w_{i,t} \propto \frac{1}{\text{CIWidth}_{i,t}^{2}}.
+$$
 
-## 各模块摘要
+Thus, highly uncertain fan-vote estimates contribute less to coefficient estimation.
 
-### `t1`：粉丝投票反推
+The same explanatory variables are used as in the judge model, again with pair-level cluster-robust standard errors.
 
-- 核心方法：`Hard ABC + Soft ABC + 动态先验 + MAP 选择`
-- 重点文件：`estimate_fan_votes.py`
-- 当前仓库中已有结果：2659 条选手-周估计记录、301 个周级汇总结果
-- 结果解释建议：后续分析优先使用 `p_map`，趋势展示可参考 `p_mean`
+This gives a direct comparison of whether the same professional dancer or celebrity characteristic has similar effects on judges and fans.
 
-### `t2_1`：赛制比较
+## Model 3: Incremental $R^2$
 
-- 核心问题：`Rank` 与 `Percent` 是否会改变淘汰结果，以及哪种更偏向粉丝
-- 重点文件：`analysis_voting_methods.py`、`fan_share_favor_analysis.py`、`t2_build_season_summary_and_figs.py`
-- 代表性发现：`Percent` 在整体上略偏粉丝，但真正重要的是它在分歧周里系统性地更贴近粉丝投票幅度
+To measure the contribution of professional dancers, we compare nested models with and without professional-dancer effects.
 
-### `t2_2`：争议案例
+The observed incremental explanatory power is:
 
-- 核心方法：使用 `p_map / p_mean / CI` 做 Monte Carlo 重放
-- 当前案例：`Jerry Rice`、`Billy Ray Cyrus`、`Bristol Palin`、`Bobby Bones`
-- 输出包括每个案例的争议曲线图和名次分布图
+- Judges: $\Delta R^2 = 0.0179$;
+- Fans: $\Delta R^2 = 0.0445$.
 
-### `t3`：角色与特征影响
+Professional dancers therefore explain substantially more additional variation in fan response than in judge response.
 
-- 核心方法：`OLS / WLS + cluster-robust SE`
-- 评委侧与粉丝侧分别建模，再比较同一变量在两侧的方向和显著性
-- 额外构建 `weeks_survived` 模型，量化“表现”“职业舞者”“明星特征”的增量贡献
+The estimated professional-dancer effects on judges and fans are also almost uncorrelated:
 
-### `t4`：淘汰方法设计
+$$
+\operatorname{corr}(\hat\beta_{pro}^{judge},\hat\beta_{pro}^{fan}) \approx 0.0328.
+$$
 
-- 比较方法：`Rank`、`Percent`、`Dynamic+JudgeSave`、`Uncertainty+Geometric`
-- 核心输出：`q4_method_summary.csv`、`q4_replay_df.csv`、`q4_diff_weeks.csv`、`q4_focus_weeks.csv`
-- 推荐结论：标准场景优先 `Percent`，极端分歧场景可考虑 `Uncertainty+Geometric`
+## Model 4: How Far Does a Contestant Survive?
 
-## 补充说明
+At the contestant-season level, we model
 
-- 仓库内部分中文总结 Markdown 的编码不完全统一，终端下可能出现乱码；论文写作或结果核对时，建议优先以 `.py` 脚本和 `.csv` 输出为准。
-- `t2/` 与部分压缩包、草稿文件属于历史实验痕迹，不影响主流程复现。
-- `人气/` 目录提供了一个独立的外部人气抓取思路，目前未纳入主分析管线。
+$$
+\text{weeks survived}
+$$
 
-## 参考阅读顺序
+using mean judge performance, mean inferred fan support, celebrity characteristics, and professional-dancer effects.
 
-如果你只是想快速理解项目，建议按下面顺序看：
+Nested models are compared through incremental $R^2$ to distinguish the contribution of performance, celebrity traits, and professional partners to competition longevity.
 
-1. 本 README
-2. `data/process/preprocess_report.json`
-3. `t1/weekly_summary.csv`
-4. `t2_1/fan_share_favor_summary.csv`
-5. `t3/outputs/quick_summary.txt`
-6. `t4/outputs/q4_method_summary.csv`
+### Main insight
+
+The factors that influence judges are not necessarily the factors that influence fans. Modeling these two audiences separately reveals a professional-dancer effect that would be obscured by a single combined outcome model.
+
+---
+
+# Q4 — Designing a Better Elimination Mechanism
+
+Q4 treats the competition rules themselves as a mechanism-design problem. Four elimination methods are replayed on historical weeks and evaluated against observed eliminations and high-disagreement cases.
+
+## Method 1: Rank
+
+The historical rank-based baseline combines judge rank and fan rank:
+
+$$
+R_i=r_i^{(J)}+r_i^{(F)}.
+$$
+
+It is simple and robust to scale differences, but discards information about how large score or vote gaps actually are.
+
+## Method 2: Percent
+
+The percentage baseline combines normalized judge and fan shares:
+
+$$
+C_i=s_i^{(J)}+s_i^{(F)}.
+$$
+
+This preserves the magnitude of support and provides the strongest overall historical replay match among the four tested methods.
+
+## Method 3: Dynamic Weighting + Judges Save
+
+The fan/judge balance is made week-dependent.
+
+Judge-score dispersion is summarized with a coefficient-of-variation-style quantity, while fan concentration is summarized with the Herfindahl-Hirschman Index (HHI).
+
+These statistics determine a dynamic fan weight:
+
+$$
+S_i=w_J s_i^{(J)}+w_F s_i^{(F)},
+\qquad w_J+w_F=1.
+$$
+
+When there is a single elimination, the combined score selects the bottom two and Judges Save eliminates the contestant with the lower judge score.
+
+The idea is to adapt the voting balance to the competitive structure of each week rather than imposing a constant 50/50 rule.
+
+## Method 4: Uncertainty-Aware Geometric Fusion
+
+This method directly incorporates the reliability of the hidden fan-vote estimates.
+
+Fan confidence is derived from Q1 relative interval width:
+
+$$
+c_F=\frac{1}{1+u_F},
+$$
+
+while judge confidence is derived from judge-score dispersion:
+
+$$
+c_J=\frac{d_J}{d_J+\tau}.
+$$
+
+The judge weight becomes
+
+$$
+\alpha_t=\frac{c_J}{c_J+c_F},
+$$
+
+and the final score uses geometric fusion:
+
+$$
+G_i=(s_i^{(J)})^{\alpha_t}(s_i^{(F)})^{1-\alpha_t}.
+$$
+
+This multiplicative form penalizes contestants who are weak on one dimension rather than allowing an extreme value on one side to completely compensate for the other.
+
+For single-elimination weeks, the method also applies a protection step within the lowest-ranked candidates before selecting the final loser.
+
+## Evaluation
+
+The four methods are compared on:
+
+- exact historical elimination match rate;
+- performance on weeks with extreme judge-fan disagreement;
+- judge rank of eliminated contestants;
+- fan rank of eliminated contestants;
+- judge-fan rank gap of eliminated contestants.
+
+| Method | Historical Match Rate | Extreme-Disagreement Hit Rate |
+| --- | ---: | ---: |
+| Rank | 56.38% | 2.99% |
+| **Percent** | **76.60%** | 19.40% |
+| Dynamic + Judges Save | 54.26% | 14.93% |
+| **Uncertainty + Geometric** | 68.09% | **20.90%** |
+
+The evaluation contains 188 elimination weeks, including 67 weeks identified as extreme judge-fan disagreement cases.
+
+### Main insight
+
+No single rule dominates every objective:
+
+- **Percent** gives the best overall replay consistency;
+- **Uncertainty + Geometric** performs best on extreme judge-fan disagreement weeks.
+
+This motivates a broader conclusion: an elimination system should be evaluated not only by overall accuracy, but also by how it behaves when judges and fans strongly disagree.
+
+---
+
+# Main Repository Modules
+
+| Module | Purpose |
+| --- | --- |
+| [`data/`](data) | DWTS data preprocessing and season-week modeling tables |
+| [`t1/`](t1) | ABC-based fan-vote inference and uncertainty analysis |
+| [`t2_1/`](t2_1) | Rank vs. Percent comparison and fan-preference analysis |
+| [`t2_2/`](t2_2) | Monte Carlo counterfactual replay of controversial contestants |
+| [`t3/`](t3) | Judge/fan regression, professional-dancer effects, and survival analysis |
+| [`t4/`](t4) | Alternative elimination mechanism design and replay evaluation |
+| [`人气/`](人气) | Exploratory external-popularity proxy based on Wikipedia pageviews |
+
+---
+
+# Team Contributions
+
+### Zixi Chen
+
+- Led modeling across **all four questions (Q1–Q4)**.
+- Implemented the project's computational models, simulations, statistical analyses, and supporting code.
+- Reviewed the full manuscript, including the mathematical formulation, experimental consistency, and final presentation of the modeling results.
+
+### Jiayi Chen
+
+- Co-developed the modeling approach across **all four questions (Q1–Q4)**.
+- Produced **all figures and visualizations** used in the paper.
+- Wrote the initial manuscript draft and participated in the full-paper revision process.
+
+### Muyang Li
+
+- Contributed to the initial manuscript draft.
+- Participated in manuscript revision and refinement.
+
+---
+
+# Award
+
+**2026 Mathematical Contest in Modeling (MCM) — Meritorious Winner**
+
+The project demonstrates a complete modeling workflow spanning Bayesian inverse inference, Monte Carlo simulation, uncertainty quantification, regression with robust inference, counterfactual analysis, and voting-mechanism design.
