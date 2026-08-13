@@ -428,6 +428,7 @@ This motivates a broader conclusion: an elimination system should be evaluated n
 
 ### Muyang Li
 
+- Co-developed the modeling approach across **all four questions (Q1–Q4)**.
 - Contributed to the initial manuscript draft.
 - Participated in manuscript revision and refinement.
 
