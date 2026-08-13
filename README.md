@@ -32,9 +32,9 @@ Fan votes are not publicly released. We therefore need to infer a weekly fan-vot
 
 For contestant $i$ in week $t$, let
 
-$$
+```math
 p_{i,t} \ge 0, \qquad \sum_i p_{i,t}=1
-$$
+```
 
 be the unknown fan-vote share.
 
@@ -48,43 +48,37 @@ For each season-week, the inferred fan shares are passed through the correspondi
 
 Judge scores and fan votes are converted to shares:
 
-$$
-C_i = \frac{J_i}{\sum_j J_j}+p_i,
-$$
+```math
+C_i = \frac{J_i}{\sum_j J_j} + p_i
+```
 
-and contestants with the smallest combined scores are eliminated.
+Contestants with the smallest combined scores are eliminated.
 
 ### Rank rule
 
 Judge scores and fan votes are separately ranked:
 
-$$
-R_i = \operatorname{rank}(J_i)+\operatorname{rank}(p_i),
-$$
+```math
+R_i = \operatorname{rank}(J_i) + \operatorname{rank}(p_i)
+```
 
-and contestants with the largest rank sums are eliminated.
+Contestants with the largest rank sums are eliminated.
 
 This simulator converts any candidate fan-vote vector into a predicted elimination set.
 
 ## Model 2: Dynamic Dirichlet Prior
 
-We model the weekly fan-vote vector with a Dirichlet distribution.
+We model the weekly fan-vote vector with a Dirichlet distribution. For the first modeled week of a season, a symmetric prior is used. For later weeks, the previous week's inferred vote shares provide a dynamic prior:
 
-For the first modeled week of a season, a symmetric prior is used. For later weeks, the previous week's inferred vote shares provide a dynamic prior:
+```math
+\mathbf{p}_t \sim \operatorname{Dirichlet}(\boldsymbol{\alpha}_t)
+```
 
-$$
-p_t \sim \operatorname{Dirichlet}(\alpha_t).
-$$
-
-The concentration parameter controls how strongly fan popularity is assumed to persist from one week to the next.
-
-This gives the inference process temporal continuity without forcing fan preferences to remain fixed.
+The concentration parameter controls how strongly fan popularity is assumed to persist from one week to the next. This gives the inference process temporal continuity without forcing fan preferences to remain fixed.
 
 ## Model 3: Hard Approximate Bayesian Computation (ABC)
 
 Because the elimination rule is discrete and non-differentiable, we use **ABC rejection sampling** rather than a closed-form likelihood.
-
-For each candidate draw:
 
 ```text
 sample fan-vote vector from Dirichlet prior
@@ -96,14 +90,7 @@ compare predicted elimination with observed elimination
 accept only if the elimination set matches exactly
 ```
 
-Accepted samples form an approximate posterior over weekly fan-vote shares.
-
-From these samples we compute:
-
-- posterior mean `p_mean`;
-- a 90% uncertainty interval;
-- posterior entropy;
-- an accepted-sample MAP estimate `p_map`.
+Accepted samples form an approximate posterior over weekly fan-vote shares. From these samples we compute posterior mean `p_mean`, a 90% uncertainty interval, posterior entropy, and an accepted-sample MAP estimate `p_map`.
 
 `p_map` is selected from the accepted region, so it remains consistent with the observed elimination constraint.
 
@@ -115,11 +102,11 @@ For the Percent rule, the distance measures how strongly an eliminated contestan
 
 A Gaussian-style kernel converts the distance into a weight:
 
-$$
-w \propto \exp\left[-\left(\frac{d}{\epsilon}\right)^2\right].
-$$
+```math
+w \propto \exp\!\left[-\left(\frac{d}{\epsilon}\right)^2\right]
+```
 
-This is used to evaluate posterior-predictive consistency and to quantify how strongly the inferred fan distribution supports the observed outcome.
+This is used to evaluate posterior-predictive consistency and quantify how strongly the inferred fan distribution supports the observed outcome.
 
 ## Robustness and Sensitivity
 
@@ -137,21 +124,19 @@ Q2 uses the inferred fan-vote distributions from Q1 to study whether different v
 
 ## Q2.1 — Rank vs. Percent
 
-Two counterfactual elimination rules are replayed on the same season-week data.
-
 ### Rank aggregation
 
-$$
-R_i = r_i^{(J)} + r_i^{(F)}.
-$$
+```math
+R_i = r_i^{(J)} + r_i^{(F)}
+```
 
 Only ordering information is preserved. A large difference in fan support may collapse to a one-rank difference.
 
 ### Percent aggregation
 
-$$
-C_i = s_i^{(J)} + s_i^{(F)}.
-$$
+```math
+C_i = s_i^{(J)} + s_i^{(F)}
+```
 
 Here the magnitude of support is retained: a contestant with substantially more fan support receives a proportionally larger advantage.
 
@@ -161,9 +146,9 @@ For every elimination week we compute both counterfactual elimination sets and i
 
 To measure which method is more aligned with fan preferences, we compare the inferred fan-vote share of the contestants eliminated by each method:
 
-$$
-\Delta_F = \overline{p}_{\text{Rank elim}}-\overline{p}_{\text{Percent elim}}.
-$$
+```math
+\Delta_F = \overline{p}_{\mathrm{Rank\;elim}} - \overline{p}_{\mathrm{Percent\;elim}}
+```
 
 A positive value means Percent eliminates contestants with lower fan support and therefore preserves the more popular contestants.
 
@@ -175,20 +160,13 @@ This suggests that Percent aggregation matters most near close decision boundari
 
 ## Q2.2 — Monte Carlo Counterfactual Replay
 
-We then study controversial contestants:
+We then study controversial contestants including Jerry Rice, Billy Ray Cyrus, Bristol Palin, and Bobby Bones.
 
-- Jerry Rice;
-- Billy Ray Cyrus;
-- Bristol Palin;
-- Bobby Bones.
+Fan-vote uncertainty from Q1 is propagated through the simulation instead of using only one point estimate. For each contestant-week, fan support is sampled from a triangular approximation based on the Q1 interval:
 
-Fan-vote uncertainty from Q1 is propagated through the simulation instead of using only one point estimate.
-
-For each contestant-week, fan support is sampled from a triangular approximation based on the Q1 interval:
-
-$$
-p_i^{(m)} \sim \operatorname{Triangular}(p_{lo}, p_{mode}, p_{hi}).
-$$
+```math
+p_i^{(m)} \sim \operatorname{Triangular}\!\left(p_{\mathrm{lo}}, p_{\mathrm{mode}}, p_{\mathrm{hi}}\right)
+```
 
 Each simulated season is replayed under four scenarios:
 
@@ -217,75 +195,52 @@ The counterfactual distributions show that voting-system design can materially c
 
 A contestant can be popular with fans but weak with judges, or vice versa. We therefore estimate the two mechanisms separately instead of fitting one pooled outcome model.
 
-The main explanatory variables include:
-
-- professional dancer;
-- celebrity age;
-- industry;
-- home country/region;
-- season effects;
-- week effects.
+The main explanatory variables include professional dancer, celebrity age, industry, home country/region, season effects, and week effects.
 
 ## Model 1: Judge-Score Regression
 
 For active contestants, standardized judge scores are modeled using OLS:
 
-$$
-Y_{judge} =
-\beta_0
-+ \beta_{season}
-+ \beta_{week}
-+ \beta_{age}
-+ \beta_{industry}
-+ \beta_{country}
-+ \beta_{pro}
-+ \epsilon.
-$$
+```math
+Y_{\mathrm{judge}} = \beta_0 + \beta_{\mathrm{season}} + \beta_{\mathrm{week}} + \beta_{\mathrm{age}} + \beta_{\mathrm{industry}} + \beta_{\mathrm{country}} + \beta_{\mathrm{pro}} + \varepsilon
+```
 
 Professional dancers enter as fixed effects. Standard errors are clustered by contestant-season pair to account for repeated weekly observations from the same partnership.
 
 ## Model 2: Uncertainty-Weighted Fan Regression
 
-Fan-vote shares are first mapped to logit space and standardized.
+Fan-vote shares are first mapped to logit space and standardized. Because Q1 estimates have different uncertainty levels, the fan model uses **Weighted Least Squares (WLS)** with approximately inverse-variance weights:
 
-Because Q1 estimates have different uncertainty levels, the fan model uses **Weighted Least Squares (WLS)** with approximately inverse-variance weights:
+```math
+w_{i,t} \propto \frac{1}{\operatorname{CIWidth}_{i,t}^{2}}
+```
 
-$$
-w_{i,t} \propto \frac{1}{\text{CIWidth}_{i,t}^{2}}.
-$$
+Thus, highly uncertain fan-vote estimates contribute less to coefficient estimation. The same explanatory variables are used as in the judge model, again with pair-level cluster-robust standard errors.
 
-Thus, highly uncertain fan-vote estimates contribute less to coefficient estimation.
-
-The same explanatory variables are used as in the judge model, again with pair-level cluster-robust standard errors.
-
-This gives a direct comparison of whether the same professional dancer or celebrity characteristic has similar effects on judges and fans.
-
-## Model 3: Incremental $R^2$
+## Model 3: Incremental R²
 
 To measure the contribution of professional dancers, we compare nested models with and without professional-dancer effects.
 
-The observed incremental explanatory power is:
-
-- Judges: $\Delta R^2 = 0.0179$;
-- Fans: $\Delta R^2 = 0.0445$.
+- Judges: $\Delta R^2 = 0.0179$
+- Fans: $\Delta R^2 = 0.0445$
 
 Professional dancers therefore explain substantially more additional variation in fan response than in judge response.
 
 The estimated professional-dancer effects on judges and fans are also almost uncorrelated:
 
-$$
-\operatorname{corr}(\hat\beta_{pro}^{judge},\hat\beta_{pro}^{fan}) \approx 0.0328.
-$$
+```math
+\operatorname{corr}\!\left(\widehat{\beta}_{\mathrm{pro}}^{\mathrm{judge}},\widehat{\beta}_{\mathrm{pro}}^{\mathrm{fan}}\right) \approx 0.0328
+```
 
 ## Model 4: How Far Does a Contestant Survive?
 
-At the contestant-season level, we model
+At the contestant-season level, the response variable is
 
-$$
-\text{weeks survived}
-$$
+```math
+Y_{\mathrm{survival}} = \text{weeks survived}
+```
 
-using mean judge performance, mean inferred fan support, celebrity characteristics, and professional-dancer effects.
+and the model uses mean judge performance, mean inferred fan support, celebrity characteristics, and professional-dancer effects.
 
 Nested models are compared through incremental $R^2$ to distinguish the contribution of performance, celebrity traits, and professional partners to competition longevity.
 
@@ -301,36 +256,27 @@ Q4 treats the competition rules themselves as a mechanism-design problem. Four e
 
 ## Method 1: Rank
 
-The historical rank-based baseline combines judge rank and fan rank:
-
-$$
-R_i=r_i^{(J)}+r_i^{(F)}.
-$$
+```math
+R_i = r_i^{(J)} + r_i^{(F)}
+```
 
 It is simple and robust to scale differences, but discards information about how large score or vote gaps actually are.
 
 ## Method 2: Percent
 
-The percentage baseline combines normalized judge and fan shares:
-
-$$
-C_i=s_i^{(J)}+s_i^{(F)}.
-$$
+```math
+C_i = s_i^{(J)} + s_i^{(F)}
+```
 
 This preserves the magnitude of support and provides the strongest overall historical replay match among the four tested methods.
 
 ## Method 3: Dynamic Weighting + Judges Save
 
-The fan/judge balance is made week-dependent.
+Judge-score dispersion is summarized with a coefficient-of-variation-style quantity, while fan concentration is summarized with the Herfindahl-Hirschman Index (HHI). These statistics determine a dynamic fan weight:
 
-Judge-score dispersion is summarized with a coefficient-of-variation-style quantity, while fan concentration is summarized with the Herfindahl-Hirschman Index (HHI).
-
-These statistics determine a dynamic fan weight:
-
-$$
-S_i=w_J s_i^{(J)}+w_F s_i^{(F)},
-\qquad w_J+w_F=1.
-$$
+```math
+S_i = w_J s_i^{(J)} + w_F s_i^{(F)}, \qquad w_J + w_F = 1
+```
 
 When there is a single elimination, the combined score selects the bottom two and Judges Save eliminates the contestant with the lower judge score.
 
@@ -338,45 +284,35 @@ The idea is to adapt the voting balance to the competitive structure of each wee
 
 ## Method 4: Uncertainty-Aware Geometric Fusion
 
-This method directly incorporates the reliability of the hidden fan-vote estimates.
-
 Fan confidence is derived from Q1 relative interval width:
 
-$$
-c_F=\frac{1}{1+u_F},
-$$
+```math
+c_F = \frac{1}{1+u_F}
+```
 
-while judge confidence is derived from judge-score dispersion:
+Judge confidence is derived from judge-score dispersion:
 
-$$
-c_J=\frac{d_J}{d_J+\tau}.
-$$
+```math
+c_J = \frac{d_J}{d_J+\tau}
+```
 
 The judge weight becomes
 
-$$
-\alpha_t=\frac{c_J}{c_J+c_F},
-$$
+```math
+\alpha_t = \frac{c_J}{c_J+c_F}
+```
 
 and the final score uses geometric fusion:
 
-$$
-G_i=(s_i^{(J)})^{\alpha_t}(s_i^{(F)})^{1-\alpha_t}.
-$$
+```math
+G_i = \left(s_i^{(J)}\right)^{\alpha_t}\left(s_i^{(F)}\right)^{1-\alpha_t}
+```
 
 This multiplicative form penalizes contestants who are weak on one dimension rather than allowing an extreme value on one side to completely compensate for the other.
 
 For single-elimination weeks, the method also applies a protection step within the lowest-ranked candidates before selecting the final loser.
 
 ## Evaluation
-
-The four methods are compared on:
-
-- exact historical elimination match rate;
-- performance on weeks with extreme judge-fan disagreement;
-- judge rank of eliminated contestants;
-- fan rank of eliminated contestants;
-- judge-fan rank gap of eliminated contestants.
 
 | Method | Historical Match Rate | Extreme-Disagreement Hit Rate |
 | --- | ---: | ---: |
